@@ -1,7 +1,8 @@
-# nodejs-chat
+# nodejs-game
 *par Soheil et Prosper*
 
-base de chat simple avec connexions de joueurs via socket.io
+jeu des bibliothèques connexions de joueurs via socket.io
+quand le jeu démarre, chacun prend un livre lorsque c'est son tour et le range dans sa bibliothèque pour faires des combos de points
 
 ## Installation
 
