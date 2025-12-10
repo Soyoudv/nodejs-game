@@ -157,6 +157,76 @@
         document.getElementById("messages").innerHTML += "<li><b>" + name + "</b><b class='id'>#" + id + "</b>: " + message + "</li>";
     })
 
+
+    // fonctions pour le jeu:
+
+    function afficher_livre_plat(book, index, size) {
+        const w = size*(0.75);
+        const h = size;
+        const x = 10 + size * (index - Math.floor(n_books / 10) * 10 - 1);
+        const y = 10 + Math.floor(n_books / 10) * (size + 10);
+        const imgSize = size * 0.5;
+
+        const couleurGenre = matchCouleurGenre(book.genre);
+        const couleurFormat = matchCouleurFormat(book.format);
+        
+        const fontSize = tailleDynamique(size, book.titre); //taille de police dynamique en fonction de la longueur du titre
+
+        const bookGroup = d3.select("#svg1")
+        .append("g")
+        .attr("class", "book")
+        .attr("transform", `translate(${x}, ${y})`)
+        .datum({
+            book, x, y
+        });
+
+        bookGroup.append("rect")
+        .attr("width", w)
+        .attr("height", h)
+        .attr("fill", couleurFormat)
+        .attr("stroke", "black");
+
+        bookGroup.append("text")
+        .attr("id", "nom")
+        .attr("x", w / 2)
+        .attr("y", w*0.15)
+        .attr("text-anchor", "middle")
+        .attr("fill", "black")
+        .attr("font-weight", "bold")
+        .attr("font-size", `${fontSize}px`)
+        .text(book.nom || book.auteur); // nom de l'auteur, s'il est vide, mettre l'auteur
+
+        bookGroup.append("text")
+        .attr("id", "titre")
+        .attr("x", w / 2)
+        .attr("y", w*0.3)
+        .attr("text-anchor", "middle")
+        .attr("fill", "black")
+        .attr("font-size", `${fontSize}px`)
+        .text(book.titre);
+
+        bookGroup.append("rect")
+        .attr("width", imgSize)
+        .attr("height", imgSize)
+        .attr("x", (w - imgSize) / 2)
+        .attr("y", h - imgSize - 10)
+        .attr("fill", couleurGenre)
+        .attr("stroke", "black");
+
+        
+
+        d3.selectAll(".book").call(drag);
+    }
+
+    function affichage_init(){
+
+    }
+
+    socket.on("game_start", (joueur1, joueur2) => {
+
+    });
+
+
     
 </script>
 
