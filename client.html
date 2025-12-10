@@ -177,7 +177,9 @@
         .attr("class", "book")
         .attr("transform", `translate(${x}, ${y})`)
         .datum({
-            book, x, y
+            livre: book,
+            coord_x: x,
+            coord_y: y
         });
 
         bookGroup.append("rect")
