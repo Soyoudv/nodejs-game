@@ -13,7 +13,7 @@ app.get('/', (req, res) => { // Envoie au client le fichier client.html
 });
 
 const user_needed = 2; // nombre d'utilisateurs nécessaires pour démarrer la partie
-const user_max = 4; // nombre maximum d'utilisateurs
+const user_max = 2; // nombre maximum d'utilisateurs
 const game_going = false; // indique si une partie est en cours
 
 var user_list = []; // tableau des noms des joueurs connectés
@@ -33,6 +33,11 @@ function exit_user(socket) {
   socket.emit('exit_response', name, true, 'User exited successfully');
 }
 
+function GAME_START(){
+  // Placeholder for game logic
+
+}
+
 io.on('connection', (socket) => {
 
 
@@ -43,7 +48,7 @@ io.on('connection', (socket) => {
 
   socket.on('identification', (new_user) => {
 
-
+    console.log(user_list.length + " users logged, " + user_max + " max"); // log
     console.log("Attempting identification with name " + new_user); // log
 
     if (user_list.includes(new_user)) { // if the name is already taken
@@ -53,18 +58,27 @@ io.on('connection', (socket) => {
 
     } else if (userid_list.includes(socket.id)) { // if the user is already logged in
 
+      console.log("tried to join but already logged in"); // log
       socket.emit('join_response', new_user, false, 'Already logged in');
+
+    } else if (user_list.length >= user_max){ // if the max number of users is reached
+
+      console.log("tried to join but the server is full"); // log
+      socket.emit('join_response', new_user, false, 'Server full');
 
     }else{
 
       user_list.push(new_user); // ajoute le new_user à la liste
       userid_list.push(socket.id); // ajoute l'id à la liste
 
-      console.log("Name available, identification successful"); // log
+      console.log("Name available, identification successful, " + user_list.length + " users logged, " + user_max + " max"); // log
       socket.emit('join_response', new_user, true, 'Name accepted');
 
       update_all_user_list();
 
+      if (user_list.length = user_needed){
+        GAME_START();
+      }
     }
   });
 
@@ -104,11 +118,8 @@ io.on('connection', (socket) => {
     exit_user(socket);
   });
 
-
-  
-
-  
 });
+
 
 server.listen(8888, () => { // Starting the server on port 8888
   console.log("Server running at http://localhost:8888\n--------------------------------" );
