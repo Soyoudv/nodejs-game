@@ -31,10 +31,26 @@ function exit_user(socket) {
   console.log("User " + socket.id + " has logged out from " + name); // log
   update_all_user_list(); // on renvoie à tout le monde
   socket.emit('exit_response', name, true, 'User exited successfully');
+
+  if (game_going){
+    GAME_STOP();
+  }
+}
+
+function GAME_STOP(){
+  // Placeholder for game stop logic
 }
 
 function GAME_START(){
+  game_going = true;
+
+  joueur1 = user_list[0]; //désignation des joueurs (2 premiers de la liste)
+  joueur2 = user_list[1];
+
+  console.log("Game started between " + joueur1 + " and " + joueur2); // log
   // Placeholder for game logic
+  
+  
 
 }
 
@@ -78,6 +94,9 @@ io.on('connection', (socket) => {
 
       if (user_list.length = user_needed){
         GAME_START();
+        let joueur1 = user_list[0];
+        let joueur2 = user_list[1];
+        io.emit('game_start', joueur1, joueur2);
       }
     }
   });
