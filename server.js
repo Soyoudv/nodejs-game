@@ -1,7 +1,7 @@
 const { on, once } = require('events'); // Importation des fonctions on et once du module events
 const express = require('express'); // Importation du framework Express
 const http = require('http'); // Importation du module HTTP
-const { exit } = require('process');
+const { exit, send } = require('process');
 const socketIo = require('socket.io'); // Importation de Socket.IO
 
 const app = express(); // Création de l'application Express
@@ -69,8 +69,8 @@ function GAME_START(socket) {
   console.log("----- GAME_START -----"); // log
   game_going = true;
 
-  joueur1 = user_list[0]; //désignation des joueurs (2 premiers de la liste)
-  joueur2 = user_list[1];
+  var joueur1 = user_list[0]; //désignation des joueurs (2 premiers de la liste)
+  var joueur2 = user_list[1];
   users_playing = [joueur1, joueur2];
 
   console.log("Game started between " + joueur1 + " and " + joueur2); // log
@@ -79,9 +79,41 @@ function GAME_START(socket) {
   socket.emit('game_start', joueur1, joueur2);
 
   console.log("shuffling " + (2 * 20) + " books"); // log
-  n_turns = 2 * 20; // nombre de tours (2 joueurs, 20 tours chacun)
-  current_turn = 0;
+  var n_turns = 2 * 20; // nombre de tours (2 joueurs, 20 tours chacun)
+  var current_turn = 0;
 
+  var books = flush_books(n_turns); // tirer 40 livres au hasard
+
+  // sending 5 first books to clients:
+  for (var i = 0; i < 5; i++) {
+    socket.emit('book', books[i], i + 1);
+  }
+
+  NEXT_TURN(socket, n_turns, current_turn);
+}
+
+function NEXT_TURN(socket, n_turns, cur_turn, j1, j2) {
+  if ( n_turns-1 === cur_turn ) {
+    GAME_END(socket);
+    return;
+  } else if ( cur_turn % 2 === 0 ) {
+    console.log("Turn " + (cur_turn + 1) + " for " + j1); // log
+    socket.emit("NEXT_TURN", j1,);
+    socket.emit('book', books[cur_turn + 4]);
+  } else {
+    console.log("Turn " + (cur_turn + 1) + " for " + j2); // log
+    socket.emit("NEXT_TURN", j2);
+    socket.emit('book', books[cur_turn + 4]);
+  }
+  NEXT_TURN(socket, n_turns, cur_turn + 1, j1, j2); // appel récursif pour le tour suivant
+}
+
+function GAME_END(socket){
+  console.log("----- GAME_END -----"); // log
+  socket.emit("GAME_END");
+  console.log("demande des scores"); // log
+  game_going = false;
+  users_playing = [];
 }
 
 io.on('connection', (socket) => {
