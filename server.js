@@ -14,7 +14,7 @@ app.get('/', (req, res) => { // Envoie au client le fichier client.html
 
 const user_needed = 2; // nombre d'utilisateurs nécessaires pour démarrer la partie
 const user_max = 2; // nombre maximum d'utilisateurs
-const game_going = false; // indique si une partie est en cours
+var game_going = false; // indique si une partie est en cours
 
 var user_list = []; // tableau des noms des joueurs connectés
 var userid_list = []; // tableau des ids des joueurs connectés
@@ -93,7 +93,7 @@ io.on('connection', (socket) => {
 
       update_all_user_list();
 
-      if (user_list.length = user_needed){
+      if (user_list.length === user_needed){
         GAME_START(socket);
         let joueur1 = user_list[0];
         let joueur2 = user_list[1];

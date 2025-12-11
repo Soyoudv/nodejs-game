@@ -330,7 +330,17 @@
     }
 
     socket.on("game_start", (joueur1, joueur2) => {
+        // AFFICHAGE dans game_box
+        d3.selectAll("svg").remove(); // on supprime l'ancienne zone de jeu s'il y en a une
+        const svg = d3.select(".game_box")
+            .append("svg")
+            .attr("id", "svg1")
+            .attr("width", 1080)
+            .attr("height", 720);
+        console.log("Game started between " + joueur1 + " and " + joueur2); // log
 
+        afficher_biblio(joueur1, 50, 50, 5, 4, 80); // joueur 1
+        afficher_biblio(joueur2, 670, 50, 5, 4, 80); // joueur 2
     });
 
 
