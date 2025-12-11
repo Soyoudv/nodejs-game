@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,10 +9,8 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
-    <!-- ------------------------------ CSS ------------------------------ -->
+<!-- ------------------------------ CSS ------------------------------ -->
 <style>
-
-       
     body {
         font-family: "MS UI Gothic", sans-serif;
     }
@@ -26,9 +25,8 @@
         opacity: 0.25;
         font-size: 0.8em;
     }
-
 </style>
-    <!-- ------------------------------ JAVASCRIPT ------------------------------ -->
+<!-- ------------------------------ JAVASCRIPT ------------------------------ -->
 <script>
     var socket = io();
 
@@ -37,12 +35,12 @@
     var my_id = "";
 
 
-    function display_for(where, message, n){
+    function display_for(where, message, n) {
         document.getElementById(where).innerText = message;
 
-        setTimeout(function() { // Efface le message après n secondes
+        setTimeout(function () { // Efface le message après n secondes
             document.getElementById(where).innerText = "";
-        }, 1000*n);
+        }, 1000 * n);
     }
 
 
@@ -60,88 +58,88 @@
     });
 
 
-    function join(){
+    function join() {
         var name = document.getElementById("name_box").value;
         document.getElementById("name_box").value = "";
 
-        if(name == ""){
+        if (name == "") {
             display_for("join_status", "Your name can't be empty", 3);
             return;
         }
-        
+
         console.log("Sending join request as " + name);
         socket.emit("identification", name);
     }
 
 
     socket.on("join_response", (name, success, message) => {
-        if(success){
+        if (success) {
             joined = true;
             registered_name = name;
             display_for("join_status", message + ": " + registered_name, 3);
-            
+
             document.getElementById("profile_status").innerHTML = "(Logged in as " + registered_name + ")";
             console.log("Join successful as " + registered_name); // log
-        }else{
+        } else {
             display_for("join_status", "Join failed: " + message, 3);
         }
     });
 
 
     socket.on('exit_response', (name, success, message) => {
-        if (success){
+        if (success) {
             display_for("join_status", "User " + name + " has exited", 3);
             console.log("Exit successful for " + name); // log
-        }else{
+        } else {
             display_for("join_status", "Exit failed: " + message, 3);
             console.log("Exit failed for " + name); // log
         }
     });
-    
+
 
     socket.on('update_user_list', (user_list, userid_list, user_needed, user_max) => {
 
-            document.getElementById("names").innerHTML = ""; // vide la boîte
+        document.getElementById("names").innerHTML = ""; // vide la boîte
 
-            // on affiche tous les éléments de la hashmap en la parcourant en tant que un tableau
-            for (let i = 0; i < user_list.length; i++) {
-                document.getElementById("names").innerHTML += "<li><b>" + user_list[i] + "</b><b class='id'>#" + (i+1) + "</b></li>";
-            }
+        // on affiche tous les éléments de la hashmap en la parcourant en tant que un tableau
+        for (let i = 0; i < user_list.length; i++) {
+            document.getElementById("names").innerHTML += "<li><b>" + user_list[i] + "</b><b class='id'>#" + (i + 1) + "</b></li>";
+        }
 
-            if (user_list.length >= 1){
-                document.getElementById("game_status").innerHTML = user_list.length + " user connected. (" + user_needed + " needed to start, max " + user_max + ")";
-                return;
-            }else{
-                document.getElementById("game_status").innerHTML = "no users connected. (" + user_needed + " needed to start, max " + user_max + ")";
-                return;
-            }
+        if (user_list.length >= 1) {
+            document.getElementById("game_status").innerHTML = user_list.length + " user connected. (" + user_needed + " needed to start, max " + user_max + ")";
+            return;
+        } else {
+            document.getElementById("game_status").innerHTML = "no users connected. (" + user_needed + " needed to start, max " + user_max + ")";
+            return;
+        }
     });
 
 
-    function exit(){
-        if(joined){
+    function exit() {
+        if (joined) {
             document.getElementById("profile_status").innerText = "";
             console.log(my_id + "Sending exit request as " + registered_name); // log
             socket.emit("exit");
-            
+
             joined = false;
             registered_name = "";
-        }else{
+        } else {
             display_for("join_status", "You are not connected, you cant exit", 3);
         }
     }
 
-    function send_message(){
+    function send_message() {
         var message = document.getElementById("message_box").value;
         document.getElementById("message_box").value = "";
 
-        if(!joined){
+        if (!joined) {
 
             display_for("chat_status", "You must be connected to send messages", 3);
 
         }
 
-        else if(message == ""){
+        else if (message == "") {
 
             display_for("chat_status", "You can't send empty messages", 3);
 
@@ -152,7 +150,7 @@
         }
     }
 
-    socket.on('receive_message', (id, name, message) =>{
+    socket.on('receive_message', (id, name, message) => {
         console.log("Received message from " + name + ": " + message); // log
         document.getElementById("messages").innerHTML += "<li><b>" + name + "</b><b class='id'>#" + id + "</b>: " + message + "</li>";
     })
@@ -160,68 +158,84 @@
 
     // fonctions pour le jeu:
 
-    function afficher_livre_plat(book, index, size) {
-        const w = size*(0.75);
+    function afficher_livre_plat(book, index, size, initials) {
+        const w = size * (0.75);
         const h = size;
         const x = 10 + size * (index - Math.floor(n_books / 10) * 10 - 1);
         const y = 10 + Math.floor(n_books / 10) * (size + 10);
         const imgSize = size * 0.5;
 
+        const innitiales = get_innitiales(book.nom || book.auteur.split(' ').pop(), book.auteur);
+        // on récupère les innitiales de l'auteur à partir du nom complet et du nom, s'il n'y a pas de prénom, on récupère juste le premier mot en tant que prénom
+
         const couleurGenre = matchCouleurGenre(book.genre);
         const couleurFormat = matchCouleurFormat(book.format);
-        
-        const fontSize = tailleDynamique(size, book.titre); //taille de police dynamique en fonction de la longueur du titre
+        // pour donner des couleurs dynamiques aux livres en fonction de leur genre et format
+
+        const fontSize = tailleDynamique(size, book.titre);
+        //taille de police dynamique en fonction de la longueur du titre
 
         const bookGroup = d3.select("#svg1")
-        .append("g")
-        .attr("class", "book")
-        .attr("transform", `translate(${x}, ${y})`)
-        .datum({
-            livre: book,
-            coord_x: x,
-            coord_y: y
-        });
+            .append("g")
+            .attr("class", "book")
+            .attr("transform", `translate(${x}, ${y})`)
+            .datum({
+                livre: book,
+                coord_x: x,
+                coord_y: y
+            });
 
         bookGroup.append("rect")
-        .attr("width", w)
-        .attr("height", h)
-        .attr("fill", couleurFormat)
-        .attr("stroke", "black");
+            .attr("width", w)
+            .attr("height", h)
+            .attr("fill", couleurFormat)
+            .attr("stroke", "black");
 
         bookGroup.append("text")
-        .attr("id", "nom")
-        .attr("x", w / 2)
-        .attr("y", w*0.15)
-        .attr("text-anchor", "middle")
-        .attr("fill", "black")
-        .attr("font-weight", "bold")
-        .attr("font-size", `${fontSize}px`)
-        .text(book.nom || book.auteur); // nom de l'auteur, s'il est vide, mettre l'auteur
+            .attr("id", "nom")
+            .attr("x", w / 2)
+            .attr("y", w * 0.15)
+            .attr("text-anchor", "middle")
+            .attr("fill", "black")
+            .attr("font-weight", "bold")
+            .attr("font-size", `${fontSize}px`)
+            .text(innitiales); // nom de l'auteur, s'il est vide, mettre l'auteur
 
         bookGroup.append("text")
-        .attr("id", "titre")
-        .attr("x", w / 2)
-        .attr("y", w*0.3)
-        .attr("text-anchor", "middle")
-        .attr("fill", "black")
-        .attr("font-size", `${fontSize}px`)
-        .text(book.titre);
+            .attr("id", "titre")
+            .attr("x", w / 2)
+            .attr("y", w * 0.3)
+            .attr("text-anchor", "middle")
+            .attr("fill", "black")
+            .attr("font-size", `${fontSize}px`)
+            .text(book.titre);
 
         bookGroup.append("rect")
-        .attr("width", imgSize)
-        .attr("height", imgSize)
-        .attr("x", (w - imgSize) / 2)
-        .attr("y", h - imgSize - 10)
-        .attr("fill", couleurGenre)
-        .attr("stroke", "black");
+            .attr("width", imgSize)
+            .attr("height", imgSize)
+            .attr("x", (w - imgSize) / 2)
+            .attr("y", h - imgSize - 10)
+            .attr("fill", couleurGenre)
+            .attr("stroke", "black");
 
-        
+        d3.selectAll(".book")
+            .on("click", function (event, d) {
+                if (mon_tour) {
+                    if (selected_book) {
+                        selected_book.select("rect")
+                            .attr("stroke-width", 1)
+                            .attr("stroke", "black");
+                    }
+                    selected_book = d3.select(this);
+                    selected_book.select("rect")
+                        .attr("stroke-width", 4)
+                        .attr("stroke", "red");
 
-        d3.selectAll(".book").call(drag);
-    }
+                    console.log("Livre sélectionné :", d.livre.titre);
+                }
+            });
 
-    function affichage_init(){
-
+        wrapText(bookGroup.select("#titre"), w * 0.9); // on applique le wrapping au titre
     }
 
     socket.on("game_start", (joueur1, joueur2) => {
@@ -229,10 +243,11 @@
     });
 
 
-    
+
 </script>
 
-    <!-- ------------------------------ HTML ------------------------------ -->
+<!-- ------------------------------ HTML ------------------------------ -->
+
 <body>
     <div class="profile">
         <p id="profile_status"></p>
@@ -253,7 +268,7 @@
 
         <input id="message_box" type="text" value=""></input>
         <button onclick="send_message()">Send</button>
-        <ul id="messages"></ul> 
+        <ul id="messages"></ul>
         <p id="chat_status"></p>
 
     </div>
@@ -266,4 +281,5 @@
 
     </div>
 </body>
+
 </html>
