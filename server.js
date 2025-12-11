@@ -16,12 +16,37 @@ const fs = require('fs'); // to read the livres.json file
 
 const user_needed = 2; // nombre d'utilisateurs nécessaires pour démarrer la partie
 const user_max = 2; // nombre maximum d'utilisateurs
-var game_going = false; // indique si une partie est en cours
 
 var user_list = []; // tableau des noms des joueurs connectés
 var userid_list = []; // tableau des ids des joueurs connectés
 
+
+// ----- VARIABLES POUR LE JEU -----
+
 var users_playing = [];
+
+var game_going = false; // indique si une partie est en cours
+
+var selected_books = [];
+
+var joueur1 = "";
+var joueur2 = "";
+
+var n_turns = 0;
+var cur_turn = 0;
+
+function reinitialize_all() {
+  users_playing = [];
+  game_going = false;
+  selected_books = [];
+  joueur1 = "";
+  joueur2 = "";
+  n_turns = 0;
+  cur_turn = 0;
+}
+
+
+// ----- FONCTIONS -----
 
 function update_all_user_list() {
   console.log("Sending user list update to all clients " + user_list); // log
@@ -31,6 +56,7 @@ function update_all_user_list() {
 function exit_user(socket) {
   if (game_going && users_playing.includes(user_list[userid_list.indexOf(socket.id)])) {
     GAME_STOP(socket, user_list[userid_list.indexOf(socket.id)] + " has exited the game");
+    reinitialize_all();
   }
 
   var name = user_list[userid_list.indexOf(socket.id)]; // on recup le nom pour le log
@@ -41,12 +67,13 @@ function exit_user(socket) {
   socket.emit('exit_response', name, true, 'User exited successfully');
 }
 
+
+
 function flush_books(n) {
   fs.readFile('livres.json', (err, data) => {
     if (err) throw err;
-
     const books = JSON.parse(data);
-    const selected_books = [];
+    selected_books = [];
 
     for (let i = 0; i < n; i++) {
       const rd_i = Math.floor(Math.random() * books.length);
@@ -59,8 +86,7 @@ function flush_books(n) {
 
 function GAME_STOP(socket, reason) { // différent de GAME_END
   console.log("----- GAME_STOP -----"); // log
-  game_going = false;
-  users_playing = [];
+  reinitialize_all();
   console.log("Game stopped: " + reason); // log
   socket.emit("GAME_STOP", reason);
 }
@@ -82,38 +108,40 @@ function GAME_START(socket) {
   var n_turns = 2 * 20; // nombre de tours (2 joueurs, 20 tours chacun)
   var current_turn = 0;
 
-  var books = flush_books(n_turns); // tirer 40 livres au hasard
+  flush_books(n_turns); // tirer 40 livres au hasard
 
   // sending 5 first books to clients:
   for (var i = 0; i < 5; i++) {
-    socket.emit('book', books[i], i + 1);
+    socket.emit('book', selected_books[i], i + 1);
   }
 
-  NEXT_TURN(socket, n_turns, current_turn);
+  NEXT_TURN(socket);
 }
 
-function NEXT_TURN(socket, n_turns, cur_turn, j1, j2) {
-  if ( n_turns-1 === cur_turn ) {
+function NEXT_TURN(socket) {
+  if (n_turns - 1 === cur_turn) {
     GAME_END(socket);
     return;
-  } else if ( cur_turn % 2 === 0 ) {
-    console.log("Turn " + (cur_turn + 1) + " for " + j1); // log
-    socket.emit("NEXT_TURN", j1,);
-    socket.emit('book', books[cur_turn + 4]);
+  } else if (cur_turn % 2 === 0) {
+    console.log("Turn " + (cur_turn + 1) + " for " + joueur1); // log
+    socket.emit("NEXT_TURN", joueur1,);
+    socket.emit('book', selected_books[cur_turn + 4]);
   } else {
-    console.log("Turn " + (cur_turn + 1) + " for " + j2); // log
-    socket.emit("NEXT_TURN", j2);
-    socket.emit('book', books[cur_turn + 4]);
+    console.log("Turn " + (cur_turn + 1) + " for " + joueur2); // log
+    socket.emit("NEXT_TURN", joueur2);
+    socket.emit('book', selected_books[cur_turn + 4]);
   }
-  NEXT_TURN(socket, n_turns, cur_turn + 1, j1, j2); // appel récursif pour le tour suivant
+  cur_turn += 1;
 }
 
-function GAME_END(socket){
+//   NEXT_TURN(socket); // appel récursif pour le tour suivant
+
+
+function GAME_END(socket) {
   console.log("----- GAME_END -----"); // log
   socket.emit("GAME_END");
   console.log("demande des scores"); // log
-  game_going = false;
-  users_playing = [];
+  reinitialize_all();
 }
 
 io.on('connection', (socket) => {
