@@ -158,6 +158,97 @@
 
     // fonctions pour le jeu:
 
+    function afficher_biblio(joueur, x, y, l, c, size) {
+        const w = size * (0.75)
+        const h = size
+        const wtotal = l * size * (0.75) + (l + 1) * 10
+        const htotal = c * size + (c + 1) * 10
+
+        const biblioGroup = d3.select("#svg1")
+            .append("g")
+            .attr("class", "biblio")
+            .attr("transform", `translate(${x}, ${y})`)
+            .datum({ // on stocke les infos de la bibliothèque et un tableau vide pour le contenu
+                joueur: joueur,
+                coord_x: x,
+                coord_y: y,
+                lignes: l,
+                colonnes: c,
+                contenu: Array.from({ length: l }, () => Array.from({ length: c }, () => null))
+            });
+
+        biblioGroup.append("rect")
+            .attr("width", wtotal)
+            .attr("height", htotal)
+            .attr("fill", "lightgray")
+            .attr("stroke", "black");
+
+        for (var i = 0; i < l; i++) {
+            for (var j = 0; j < c; j++) {
+                biblioGroup.append("rect")
+                    .attr("x", 10 + i * (w + 10))
+                    .attr("y", 10 + j * (h + 10))
+                    .attr("width", w)
+                    .attr("height", h)
+                    .attr("fill", "darkgray")
+                    .datum({
+                        full: false,
+                        slot_x: i,
+                        slot_y: j,
+                        coord_x: 10 + i * (w + 10),
+                        coord_y: 10 + j * (h + 10)
+                    })
+                    .on("hover", function (event, d) {
+                        if (mon_tour) {
+                            if (full === false) {
+                                d3.select(this)
+                                    .attr("fill", "dark_green");
+                            } else {
+                                d3.select(this)
+                                    .attr("fill", "dark_red");
+                            }
+                        }
+                    })
+                    .on("mouseout", function (event, d) {
+                        d3.select(this)
+                            .attr("fill", "darkgray");
+                    })
+                    .on("click", function (event, d) {
+                        if (mon_tour) {
+                            if (selected_book !== null) {
+                                let biblioData = biblioGroup.datum();
+
+                                if (biblioData.contenu[d.slot_x][d.slot_y] === null) {
+                                    let bookData = selected_book.datum().livre;
+
+                                    // mettre à jour le contenu de la bibliothèque
+                                    biblioData.contenu[d.slot_x][d.slot_y] = bookData;
+
+                                    // déplacer le livre dans la bibliothèque (mettre à jour les coordonnées) toujours le même livre et pas un sous élément de la bibliothèque
+                                    selected_book.attr("transform", `translate(${d.coord_x + biblioData.coord_x}, ${d.coord_y + biblioData.coord_y})`);
+
+                                    selected_book.select("rect") // deselectionner livre
+                                        .attr("stroke-width", 1)
+                                        .attr("stroke", "black");
+                                    selected_book = null;
+
+                                    d.full = true;
+                                    mon_tour = false; // fin du tour après avoir placé le livre
+
+                                    socket.emit("end_turn", bookData.livre); // prévenir le serveur de la fin du tour
+
+                                    console.log(`Livre ajouté à la bibliothèque de ${biblioData.joueur} en position (${d.slot_x}, ${d.slot_y})`);
+
+                                } else {
+                                    console.log("Emplacement déjà occupé !");
+                                }
+                            }
+                        }
+                    });
+            }
+        }
+    }
+
     function afficher_livre_plat(book, index, size, initials) {
         const w = size * (0.75);
         const h = size;
