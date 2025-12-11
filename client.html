@@ -34,6 +34,7 @@
     var joined = false;
     var my_id = "";
 
+    var game_going = false;
     var my_turn = false;
 
     function display_for(where, message, n) {
@@ -337,7 +338,43 @@
         wrapText(bookGroup.select("#titre"), w * 0.9); // on applique le wrapping au titre
     }
 
-    socket.on("game_start", (joueur1, joueur2) => {
+    function afficher_panneau_livres(n_livres, size_livre, x, y) {
+        let w = size_livre * (0.75);
+        let h = size_livre;
+        let wtotal = n_livres * w + (n_livres + 1) * 10;
+        let htotal = h + 10 * 2;
+        const panneauGroup = d3.select("#svg1")
+            .append("g")
+            .attr("class", "panneau_livres")
+            .attr("transform", `translate(${x}, ${y})`)
+            .datum({
+                full: false,
+                slots: n_livres,
+                contenu: Array.from({ length: n_livres }, () => null)
+            });
+
+        panneauGroup.append("rect")
+            .attr("width", wtotal)
+            .attr("height", htotal)
+            .attr("fill", "lightgray")
+            .attr("stroke", "black");
+
+        for (let i = 0; i < n_livres; i++) {
+            panneauGroup.append("rect")
+                .attr("x", 10 + i * (w + 10))
+                .attr("y", 10)
+                .attr("width", w)
+                .attr("height", h)
+                .attr("fill", "darkgray")
+                .datum({
+                    coord_x: 10 + i * (w + 10),
+                    coord_y: 10,
+                    slotid: i
+                });
+        }
+    }
+
+    socket.on("GAME_START", (joueur1, joueur2) => {
         // AFFICHAGE dans game_box
         d3.selectAll("svg").remove(); // on supprime l'ancienne zone de jeu s'il y en a une
         const svg = d3.select(".game_box")
@@ -346,12 +383,18 @@
             .attr("width", 1080)
             .attr("height", 720);
         console.log("Game started between " + joueur1 + " and " + joueur2); // log
+        game_going = true;
 
         afficher_biblio(joueur1, 50, 50, 5, 4, 80); // joueur 1
         afficher_biblio(joueur2, 670, 50, 5, 4, 80); // joueur 2
+
+        afficher_panneau_livres(5, 80, (1080 - (80 * 0.75 * 5 + 10 * 6)) / 2, 720 - 20 - 80 - 10); // panneau de livres
+
     });
 
-
+    socket.on("book", (book, index) => {
+        afficher_livre_plat(book, index, 80);
+    });
 
 </script>
 

@@ -12,7 +12,7 @@ app.get('/', (req, res) => { // Envoie au client le fichier client.html
   res.sendFile(__dirname + '/client.html');
 });
 
-const fs = require('fs'); // to read the livres.json file
+const fs = require('fs');
 
 const user_needed = 2; // nombre d'utilisateurs nécessaires pour démarrer la partie
 const user_max = 2; // nombre maximum d'utilisateurs
@@ -70,25 +70,26 @@ function exit_user(socket) {
 
 
 function flush_books(n) {
-  fs.readFile('livres.json', (err, data) => {
-    if (err) throw err;
-    const books = JSON.parse(data);
-    selected_books = [];
 
-    for (let i = 0; i < n; i++) {
-      const rd_i = Math.floor(Math.random() * books.length);
-      selected_books.push(books[rd_i]);
-      books.splice(rd_i, 1);   // nlève le livre pour éviter doublon
-    }
-  });
-  return selected_books;
+  // Lecture SYNCHRONE du fichier (bloque l'exécution jusqu'à la fin)
+  var data = fs.readFileSync('livres.json', 'utf8');
+  var books = JSON.parse(data);
+  selected_books = [];
+
+  for (let i = 0; i < n; i++) {
+    var rd_i = Math.floor(Math.random() * books.length);
+    selected_books.push(books[rd_i]);
+    books.splice(rd_i, 1);   // enlève le livre pour éviter doublon
+  }
 }
 
-function GAME_STOP(socket, reason) { // différent de GAME_END
+function GAME_STOP(reason) { // différent de GAME_END
   console.log("----- GAME_STOP -----"); // log
   reinitialize_all();
   console.log("Game stopped: " + reason); // log
-  socket.emit("GAME_STOP", reason);
+  for (const socket of io.sockets.sockets.values()) {
+    socket.emit("GAME_STOP", reason);
+  }
 }
 
 function GAME_START(socket) {
@@ -102,7 +103,9 @@ function GAME_START(socket) {
   console.log("Game started between " + joueur1 + " and " + joueur2); // log
   // Placeholder for game logic
 
-  socket.emit('game_start', joueur1, joueur2);
+  for (const socket of io.sockets.sockets.values()) {
+    socket.emit("GAME_START", joueur1, joueur2);
+  }
 
   console.log("shuffling " + (2 * 20) + " books"); // log
   var n_turns = 2 * 20; // nombre de tours (2 joueurs, 20 tours chacun)
@@ -113,6 +116,7 @@ function GAME_START(socket) {
   // sending 5 first books to clients:
   for (var i = 0; i < 5; i++) {
     socket.emit('book', selected_books[i], i + 1);
+    console.log("sending book " + selected_books[i].titre); // log
   }
 
   NEXT_TURN(socket);
@@ -124,11 +128,15 @@ function NEXT_TURN(socket) {
     return;
   } else if (cur_turn % 2 === 0) {
     console.log("Turn " + (cur_turn + 1) + " for " + joueur1); // log
-    socket.emit("NEXT_TURN", joueur1,);
+    for (const socket of io.sockets.sockets.values()) {
+      socket.emit("NEXT_TURN", joueur1);
+    }
     socket.emit('book', selected_books[cur_turn + 4]);
   } else {
     console.log("Turn " + (cur_turn + 1) + " for " + joueur2); // log
-    socket.emit("NEXT_TURN", joueur2);
+    for (const socket of io.sockets.sockets.values()) {
+      socket.emit("NEXT_TURN", joueur2);
+    }
     socket.emit('book', selected_books[cur_turn + 4]);
   }
   cur_turn += 1;
@@ -139,7 +147,9 @@ function NEXT_TURN(socket) {
 
 function GAME_END(socket) {
   console.log("----- GAME_END -----"); // log
-  socket.emit("GAME_END");
+  for (const socket of io.sockets.sockets.values()) {
+    socket.emit("GAME_END");
+  }
   console.log("demande des scores"); // log
   reinitialize_all();
 }
