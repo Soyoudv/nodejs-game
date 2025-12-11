@@ -9,15 +9,19 @@ const server = http.createServer(app); // Création du serveur HTTP
 const io = socketIo(server); // Initialisation de Socket.IO avec le serveur HTTP
 
 app.get('/', (req, res) => { // Envoie au client le fichier client.html
-    res.sendFile(__dirname + '/client.html');
+  res.sendFile(__dirname + '/client.html');
 });
 
-const user_needed = 1; // nombre d'utilisateurs nécessaires pour démarrer la partie
+const fs = require('fs'); // to read the livres.json file
+
+const user_needed = 2; // nombre d'utilisateurs nécessaires pour démarrer la partie
 const user_max = 2; // nombre maximum d'utilisateurs
 var game_going = false; // indique si une partie est en cours
 
 var user_list = []; // tableau des noms des joueurs connectés
 var userid_list = []; // tableau des ids des joueurs connectés
+
+var users_playing = [];
 
 function update_all_user_list() {
   console.log("Sending user list update to all clients " + user_list); // log
@@ -25,33 +29,58 @@ function update_all_user_list() {
 }
 
 function exit_user(socket) {
+  if (game_going && users_playing.includes(user_list[userid_list.indexOf(socket.id)])) {
+    GAME_STOP(socket, user_list[userid_list.indexOf(socket.id)] + " has exited the game");
+  }
+
   var name = user_list[userid_list.indexOf(socket.id)]; // on recup le nom pour le log
   user_list = user_list.filter(user => user !== name); // remove the user from the array
   userid_list = userid_list.filter(id => id !== socket.id); // remove the id from the array
   console.log("User " + socket.id + " has logged out from " + name); // log
   update_all_user_list(); // on renvoie à tout le monde
   socket.emit('exit_response', name, true, 'User exited successfully');
-
-  if (game_going){
-    GAME_STOP();
-  }
 }
 
-function GAME_STOP(){
-  // Placeholder for game stop logic
+function flush_books(n) {
+  fs.readFile('livres.json', (err, data) => {
+    if (err) throw err;
+
+    const books = JSON.parse(data);
+    const selected_books = [];
+
+    for (let i = 0; i < n; i++) {
+      const rd_i = Math.floor(Math.random() * books.length);
+      selected_books.push(books[rd_i]);
+      books.splice(rd_i, 1);   // nlève le livre pour éviter doublon
+    }
+  });
+  return selected_books;
 }
 
-function GAME_START(socket){
+function GAME_STOP(socket, reason) { // différent de GAME_END
+  console.log("----- GAME_STOP -----"); // log
+  game_going = false;
+  users_playing = [];
+  console.log("Game stopped: " + reason); // log
+  socket.emit("GAME_STOP", reason);
+}
+
+function GAME_START(socket) {
+  console.log("----- GAME_START -----"); // log
   game_going = true;
 
   joueur1 = user_list[0]; //désignation des joueurs (2 premiers de la liste)
   joueur2 = user_list[1];
+  users_playing = [joueur1, joueur2];
 
   console.log("Game started between " + joueur1 + " and " + joueur2); // log
   // Placeholder for game logic
-  
+
   socket.emit('game_start', joueur1, joueur2);
-  
+
+  console.log("shuffling " + (2 * 20) + " books"); // log
+  n_turns = 2 * 20; // nombre de tours (2 joueurs, 20 tours chacun)
+  current_turn = 0;
 
 }
 
@@ -78,12 +107,12 @@ io.on('connection', (socket) => {
       console.log("tried to join but already logged in"); // log
       socket.emit('join_response', new_user, false, 'Already logged in');
 
-    } else if (user_list.length >= user_max){ // if the max number of users is reached
+    } else if (user_list.length >= user_max) { // if the max number of users is reached
 
       console.log("tried to join but the server is full"); // log
       socket.emit('join_response', new_user, false, 'Server full');
 
-    }else{
+    } else {
 
       user_list.push(new_user); // ajoute le new_user à la liste
       userid_list.push(socket.id); // ajoute l'id à la liste
@@ -93,7 +122,7 @@ io.on('connection', (socket) => {
 
       update_all_user_list();
 
-      if (user_list.length === user_needed){
+      if (user_list.length === user_needed) {
         GAME_START(socket);
         let joueur1 = user_list[0];
         let joueur2 = user_list[1];
@@ -105,21 +134,20 @@ io.on('connection', (socket) => {
   socket.on('exit', () => { // when a user exits, remove them from the user list and tell to everyone
 
     if (!userid_list.includes(socket.id)) {
-        
+
       socket.emit('exit_response', socket.id, false, 'User not found');
       return;
 
     } else {
       exit_user(socket);
     }
-
   });
 
 
-  socket.on('request_id',() => { // envoi de l'id à l'utilisateur
+  socket.on('request_id', () => { // envoi de l'id à l'utilisateur
     socket.emit('receive_id', socket.id);
   });
-  
+
 
   socket.on('ask_update_user_list', () => { // envoi de la liste des utilisateurs à la demande
     console.log("User " + socket.id + " requested user list update"); // log
@@ -130,7 +158,7 @@ io.on('connection', (socket) => {
   socket.on('send_message', (id, message) => { // when a user sends a message, broadcast it to all users
     var name = user_list[userid_list.indexOf(id)];
     console.log("User " + socket.id + "(" + name + ") sent message: " + message); // log
-    io.emit('receive_message', user_list.indexOf(name)+1, name, message);
+    io.emit('receive_message', user_list.indexOf(name) + 1, name, message);
   });
 
 
@@ -142,6 +170,6 @@ io.on('connection', (socket) => {
 
 
 server.listen(8888, () => { // Starting the server on port 8888
-  console.log("Server running at http://localhost:8888\n--------------------------------" );
+  console.log("Server running at http://localhost:8888\n--------------------------------");
 });
 
