@@ -41,7 +41,7 @@ function GAME_STOP(){
   // Placeholder for game stop logic
 }
 
-function GAME_START(){
+function GAME_START(socket){
   game_going = true;
 
   joueur1 = user_list[0]; //désignation des joueurs (2 premiers de la liste)
@@ -50,6 +50,7 @@ function GAME_START(){
   console.log("Game started between " + joueur1 + " and " + joueur2); // log
   // Placeholder for game logic
   
+  socket.emit('game_start', joueur1, joueur2);
   
 
 }
@@ -93,7 +94,7 @@ io.on('connection', (socket) => {
       update_all_user_list();
 
       if (user_list.length = user_needed){
-        GAME_START();
+        GAME_START(socket);
         let joueur1 = user_list[0];
         let joueur2 = user_list[1];
         io.emit('game_start', joueur1, joueur2);
