@@ -18,7 +18,7 @@
     .game_box {
         width: 1080px;
         height: 720px;
-        background-color: black;
+        background-color: darkgray;
     }
 
     .id {
@@ -182,6 +182,13 @@
             .attr("height", htotal)
             .attr("fill", "lightgray")
             .attr("stroke", "black");
+
+        biblioGroup.append("text")
+            .attr("x", wtotal / 2)
+            .attr("y", -10)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "40px")
+            .text((joueur).toUpperCase()); // en majuscule
 
         for (var i = 0; i < l; i++) {
             for (var j = 0; j < c; j++) {

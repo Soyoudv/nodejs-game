@@ -12,7 +12,7 @@ app.get('/', (req, res) => { // Envoie au client le fichier client.html
     res.sendFile(__dirname + '/client.html');
 });
 
-const user_needed = 2; // nombre d'utilisateurs nécessaires pour démarrer la partie
+const user_needed = 1; // nombre d'utilisateurs nécessaires pour démarrer la partie
 const user_max = 2; // nombre maximum d'utilisateurs
 var game_going = false; // indique si une partie est en cours
 
