@@ -26,8 +26,11 @@
         font-size: 0.8em;
     }
 </style>
-<!-- ------------------------------ JAVASCRIPT ------------------------------ -->
+<!-- ---------------------------- JAVASCRIPT ---------------------------- -->
 <script>
+
+// DECLARATION DES VARIABLES GLOBALES
+
     var socket = io();
 
     var registered_name = "";
@@ -42,6 +45,15 @@
 
     var other_player = null;
 
+    onload = function () {
+        document.getElementById("name_box").value = "";
+        document.getElementById("message_box").value = "";
+        // on vide les boites à l'entrée d'une personne dans le site
+        socket.emit('request_id');
+    }
+
+// PARTIE fonctions display
+
     function display_till_else(where, message) {
         document.getElementById(where).innerText = message;
     }
@@ -54,14 +66,7 @@
         }, 1000 * n);
     }
 
-
-    onload = function () {
-        document.getElementById("name_box").value = "";
-        document.getElementById("message_box").value = "";
-        // on vide les boites à l'entrée d'une personne dans le site
-        socket.emit('request_id');
-    }
-
+// PARTIE identification et chat
 
     socket.on('receive_id', (id) => {
         my_id = id;
@@ -167,7 +172,7 @@
     })
 
 
-    // fonctions pour le jeu:
+// PARTIE fonctions pour le jeu
 
     function tailleDynamique(size, title) { // fonction pour calculer la taille de police en fonction de la longueur du titre
         const max = size * 0.13;                 // taille maxi relative
@@ -263,6 +268,8 @@
         }
         return innitiales;
     }
+
+// PARTIE affichage du jeu
 
     function afficher_biblio(joueur, x, y, l, c, size) {
         const w = size * (0.75)
@@ -524,6 +531,8 @@
             .attr("fill", "black")
             .text(`THIS IS THE SCOREBOARD`);
     }
+
+// PARTIE fonctions (le reste du code jeu)
 
     function est_vide_panneau_indice() { // donne l'indice de la case vide du panneau de livres, ou -1 si pleine
         let panneauData = d3.selectAll(".panneau_livres").datum();
