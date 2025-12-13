@@ -29,7 +29,7 @@
 <!-- ---------------------------- JAVASCRIPT ---------------------------- -->
 <script>
 
-// DECLARATION DES VARIABLES GLOBALES
+    // DECLARATION DES VARIABLES GLOBALES
 
     var socket = io();
 
@@ -52,7 +52,7 @@
         socket.emit('request_id');
     }
 
-// PARTIE fonctions display
+    // PARTIE fonctions display
 
     function display_till_else(where, message) {
         document.getElementById(where).innerText = message;
@@ -66,7 +66,7 @@
         }, 1000 * n);
     }
 
-// PARTIE identification et chat
+    // PARTIE identification et chat
 
     socket.on('receive_id', (id) => {
         my_id = id;
@@ -172,7 +172,7 @@
     })
 
 
-// PARTIE fonctions pour le jeu
+    // PARTIE fonctions pour le jeu
 
     function tailleDynamique(size, title) { // fonction pour calculer la taille de police en fonction de la longueur du titre
         const max = size * 0.13;                 // taille maxi relative
@@ -269,7 +269,7 @@
         return innitiales;
     }
 
-// PARTIE affichage du jeu
+    // PARTIE affichage du jeu
 
     function afficher_biblio(joueur, x, y, l, c, size) {
         const w = size * (0.75)
@@ -400,7 +400,7 @@
         const couleurFormat = matchCouleurFormat(book.format);
         // pour donner des couleurs dynamiques aux livres en fonction de leur genre et format
 
-        const fontSize = tailleDynamique(size, book.titre);
+        const fontSize = tailleDynamique(size, innitiales);
         //taille de police dynamique en fonction de la longueur du titre
 
         const bookGroup = d3.select("#svg1")
@@ -423,13 +423,14 @@
         bookGroup.append("text")
             .attr("id", "nom")
             .attr("x", w / 2)
-            .attr("y", w * 0.15)
+            .attr("y", w * 0.35)
             .attr("text-anchor", "middle")
             .attr("fill", "black")
             .attr("font-weight", "bold")
-            .attr("font-size", `${fontSize}px`)
+            .attr("font-size", "16px")
             .text(innitiales); // nom de l'auteur, s'il est vide, mettre l'auteur
 
+        /*
         bookGroup.append("text")
             .attr("id", "titre")
             .attr("x", w / 2)
@@ -438,6 +439,7 @@
             .attr("fill", "black")
             .attr("font-size", `${fontSize}px`)
             .text(book.titre);
+        */
 
         bookGroup.append("rect")
             .attr("width", imgSize)
@@ -472,7 +474,7 @@
                 }
             });
 
-        wrapText(bookGroup.select("#titre"), w * 0.9); // on applique le wrapping au titre
+        // wrapText(bookGroup.select("#titre"), w * 0.9); // on applique le wrapping au titre
     }
 
     function afficher_panneau_livres(n_livres, size_livre, x, y) {
