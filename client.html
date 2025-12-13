@@ -287,7 +287,9 @@
             .attr("width", wtotal)
             .attr("height", htotal)
             .attr("fill", "lightgray")
-            .attr("stroke", "black");
+            .attr("stroke", registered_name == joueur ? "green" : "red")
+            .attr("stroke-width", 3);
+            
 
         biblioGroup.append("text")
             .attr("x", wtotal / 2)
@@ -299,6 +301,7 @@
         for (var i = 0; i < l; i++) {
             for (var j = 0; j < c; j++) {
                 biblioGroup.append("rect")
+                    .attr("class", "biblio_slot")
                     .attr("x", 10 + i * (w + 10))
                     .attr("y", 10 + j * (h + 10))
                     .attr("width", w)
@@ -312,19 +315,16 @@
                         coord_y: 10 + j * (h + 10)
                     })
                     .on("mouseover", function (event, d) {
-                        if (my_turn) {
+                        if (registered_name == biblioGroup.datum().joueur) {
                             if (d.full === false) {
-                                d3.select()
-                                    .attr("fill", "darkgreen");
+                                d3.select(this).attr("fill", "darkgreen");
                             } else {
-                                d3.select()
-                                    .attr("fill", "darkred");
+                                d3.select(this).attr("fill", "darkred");
                             }
                         }
                     })
                     .on("mouseout", function (event, d) {
-                        d3.select()
-                            .attr("fill", "darkgray");
+                        d3.select(this).attr("fill", "darkgray");
                     })
                     .on("click", function (event, d) {
                         if (my_turn && registered_name == biblioGroup.datum().joueur) {
@@ -432,6 +432,11 @@
             .attr("fill", couleurGenre)
             .attr("stroke", "black");
 
+        bookGroup.append("rect")
+            .attr("width", w)
+            .attr("height", h)
+            .attr("fill", "#00000000")            
+
         d3.selectAll(".book")
             .on("click", function (event, d) {
                 if (my_turn && d.localisation === "panneau") {
@@ -445,8 +450,8 @@
                     }
                     selected_book = d3.select(this);
                     selected_book.select("rect")
-                        .attr("stroke-width", 4)
-                        .attr("stroke", "red");
+                        .attr("stroke-width", 2)
+                        .attr("stroke", "black");
 
                     console.log("Livre sélectionné :", d.livre.titre);
                 }
@@ -655,6 +660,11 @@
     socket.on("GAME_END", () => {
         reset_game();
         console.log("Received GAME_END from server"); // log
+    });
+
+    socket.on("GAME_STOP", (reason) => {
+        reset_game();
+        console.log("Received GAME_STOP from server: " + reason); // log
     });
 
 </script>
