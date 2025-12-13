@@ -342,6 +342,9 @@
                                     d.full = true;
                                     my_turn = false; // fin du tour après avoir placé le livre
 
+                                    // retirer le livre du panneau (pas graphiquement car déplacé, mais dans les données)
+                                    supprimer_livre_panneau(bookData);
+
                                     socket.emit("end_turn", registered_name, bookData, d.slot_x, d.slot_y); // prévenir le serveur de la fin du tour
 
                                     console.log(`Livre ajouté à la bibliothèque de ${biblioData.joueur} en position (${d.slot_x}, ${d.slot_y})`);
@@ -503,7 +506,7 @@
         const panneauData = panneau.datum();
 
         for (var i = 0; i < panneauData.slots; i++) {
-            if (panneauData.contenu[i] === livre) {
+            if (panneauData.contenu[i] !== null && panneauData.contenu[i].titre === livre.titre) {
                 panneauData.contenu[i] = null;
                 break;
             }
