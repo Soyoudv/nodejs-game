@@ -230,6 +230,8 @@ io.on('connection', (socket) => {
   socket.on("end_turn", (user_name, livre, pos_x, pos_y) => {
     console.log("tour terminé pour: " + user_list[userid_list.indexOf(socket.id)] + ", il a pris le livre: " + livre.titre + " et mis en position (" + pos_x + ", " + pos_y + ")"); // log
     io.emit("book_taken", user_name, livre, pos_x, pos_y)
+
+    NEXT_TURN();
   });
 
 });
