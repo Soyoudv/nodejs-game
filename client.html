@@ -334,6 +334,14 @@
                                     // déplacer le livre dans la bibliothèque (mettre à jour les coordonnées) toujours le même livre et pas un sous élément de la bibliothèque
                                     selected_book.attr("transform", `translate(${d.coord_x + biblioData.coord_x}, ${d.coord_y + biblioData.coord_y})`);
 
+                                    // mettre à jour le datum pour indiquer que le livre est maintenant dans la biblio
+                                    let bookDatum = selected_book.datum();
+                                    bookDatum.localisation = "biblio";
+                                    bookDatum.joueur = biblioData.joueur;
+                                    bookDatum.slot_x = d.slot_x;
+                                    bookDatum.slot_y = d.slot_y;
+                                    selected_book.datum(bookDatum);
+                                        
                                     selected_book.select("rect") // deselectionner livre
                                         .attr("stroke-width", 1)
                                         .attr("stroke", "black");
@@ -359,7 +367,7 @@
         }
     }
 
-    function afficher_livre_plat(book, x, y, size) {
+    function afficher_livre_plat(book, x, y, size, loc) {
         const w = size * (0.75);
         const h = size;
         const imgSize = size * 0.5;
@@ -381,7 +389,8 @@
             .datum({
                 livre: book,
                 coord_x: x,
-                coord_y: y
+                coord_y: y,
+                localisation: loc
             });
 
         bookGroup.append("rect")
@@ -419,7 +428,10 @@
 
         d3.selectAll(".book")
             .on("click", function (event, d) {
-                if (my_turn) {
+                if (my_turn && d.localisation === "panneau") {
+                    if (d.localisation == "panneau") {
+                        console.log("Livre pris du panneau de livres");
+                    }
                     if (selected_book) {
                         selected_book.select("rect")
                             .attr("stroke-width", 1)
@@ -490,9 +502,9 @@
         return est_vide_panneau_indice() === -1;
     }
 
-    function afficher_livre(book, x, y) {
+    function afficher_livre(book, x, y, loc) {
         // affiche un livre à des coordonnées données
-        afficher_livre_plat(book, x, y, 80);
+        afficher_livre_plat(book, x, y, 80, loc);
     }
 
     function supprimer_livre(book) { // suprime l'affichage du livre donné
@@ -532,7 +544,7 @@
 
                     const x = panneauData.coord_x + 10 + write * (panneauData.size_livre * 0.75 + 10);
                     const y = panneauData.coord_y + 10;
-                    afficher_livre(panneauData.contenu[write], x, y); // afficher le livre à la nouvelle position
+                    afficher_livre(panneauData.contenu[write], x, y, "panneau"); // afficher le livre à la nouvelle position
                 }
                 write--;
             }
@@ -555,7 +567,7 @@
 
         const x = panneauData.coord_x + 10 + pos * (panneauData.size_livre * 0.75 + 10);
         const y = panneauData.coord_y + 10;
-        afficher_livre(panneauData.contenu[pos], x, y); // afficher le livre à la nouvelle position
+        afficher_livre(panneauData.contenu[pos], x, y, "panneau"); // afficher le livre à la nouvelle position
     
 
         panneau.datum(panneauData); // mettre à jour les données du panneau
@@ -616,7 +628,7 @@
                 }
             }
 
-            afficher_livre(livre, truecords_x, truecords_y);
+            afficher_livre(livre, truecords_x, truecords_y, "biblio");
 
             supprimer_livre_panneau(livre);
             pousser_panneau_livres();

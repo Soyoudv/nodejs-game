@@ -103,11 +103,11 @@ function GAME_START() {
 
   io.emit("GAME_START", joueur1, joueur2);
 
-  console.log("shuffling " + (2 * 20) + " books"); // log
+  console.log("shuffling " + (2 * 20 + 10) + " books"); // log
   n_turns = 2 * 20; // nombre de tours (2 joueurs, 20 tours chacun)
   cur_turn = 0;
 
-  flush_books(n_turns); // tirer 40 livres au hasard
+  flush_books(n_turns + 10); // tirer 40 livres au hasard + 10 de réserve
 
   // sending 4 first books to clients: (5th book will be sent at NEXT_TURN)
   for (var i = 0; i < 4; i++) {
@@ -119,7 +119,7 @@ function GAME_START() {
 }
 
 function NEXT_TURN() {
-  if (n_turns - 1 === cur_turn) {
+  if (n_turns === cur_turn) {
     GAME_END();
     return;
   } else if (cur_turn % 2 === 0) {
