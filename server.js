@@ -123,13 +123,13 @@ function NEXT_TURN() {
     GAME_END();
     return;
   } else if (cur_turn % 2 === 0) {
+    io.emit("NEXT_TURN", joueur1);
     console.log("Turn " + (cur_turn + 1) + " for " + joueur1); // log
-    io.emit("NEXT_TURN", joueur1); console.log("Turn " + (cur_turn + 1) + " for " + joueur1); // log
     io.emit('book', selected_books[cur_turn + 4], cur_turn + 5);
     console.log("sending book n°" + (cur_turn + 5) + ": " + selected_books[cur_turn + 4].titre); // log
   } else {
+    io.emit("NEXT_TURN", joueur2);
     console.log("Turn " + (cur_turn + 1) + " for " + joueur2); // log
-    io.emit("NEXT_TURN", joueur2); console.log("Turn " + (cur_turn + 1) + " for " + joueur2); // log
     io.emit('book', selected_books[cur_turn + 4], cur_turn + 5);
     console.log("sending book n°" + (cur_turn + 5) + ": " + selected_books[cur_turn + 4].titre); // log
   }
