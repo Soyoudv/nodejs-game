@@ -40,7 +40,7 @@
     var selected_book = null;
     var n_books = 5;
 
-
+    var other_player = null;
 
     function display_till_else(where, message) {
         document.getElementById(where).innerText = message;
@@ -289,14 +289,22 @@
             .attr("fill", "lightgray")
             .attr("stroke", registered_name == joueur ? "green" : "red")
             .attr("stroke-width", 3);
-            
 
         biblioGroup.append("text")
+            .attr("id", "nom")
             .attr("x", wtotal / 2)
             .attr("y", -10)
             .attr("text-anchor", "middle")
             .attr("font-size", "40px")
             .text((joueur).toUpperCase()); // en majuscule
+
+        biblioGroup.append("text")
+            .attr("id", "score")
+            .attr("x", wtotal / 2)
+            .attr("y", htotal + 30)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "30px")
+            .text(`Score: 0`); // en majuscule
 
         for (var i = 0; i < l; i++) {
             for (var j = 0; j < c; j++) {
@@ -435,7 +443,7 @@
         bookGroup.append("rect")
             .attr("width", w)
             .attr("height", h)
-            .attr("fill", "#00000000")            
+            .attr("fill", "#00000000")
 
         d3.selectAll(".book")
             .on("click", function (event, d) {
@@ -497,6 +505,24 @@
                     slotid: i
                 });
         }
+    }
+
+    function afficher_scoreboard() {
+        const svg = d3.select(".game_box")
+            .append("svg")
+            .attr("id", "svg1")
+            .attr("width", 1080)
+            .attr("height", 720);
+            
+        d3.select("#svg1")
+            .append("text")
+            .attr("x", 1080 / 2)
+            .attr("y", 720 / 2)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "60px")
+            .attr("font-weight", "bold")
+            .attr("fill", "black")
+            .text(`THIS IS THE SCOREBOARD`);
     }
 
     function est_vide_panneau_indice() { // donne l'indice de la case vide du panneau de livres, ou -1 si pleine
@@ -585,7 +611,8 @@
     }
 
     socket.on("GAME_START", (joueur1, joueur2) => {
-        display_for("game_status", "Game started between " + joueur1 + " and " + joueur2, 5);
+        reset_game();
+        display_till_else("game_status", "Game started between " + joueur1 + " and " + joueur2);
         // AFFICHAGE dans game_box
         d3.selectAll("svg").remove(); // on supprime l'ancienne zone de jeu s'il y en a une
         const svg = d3.select(".game_box")
@@ -601,6 +628,7 @@
 
         afficher_panneau_livres(5, 80, (1080 - (80 * 0.75 * 5 + 10 * 6)) / 2, 720 - 20 - 80 - 10); // panneau de livres
 
+        other_player = joueur1 == registered_name ? joueur2 : joueur1;
     });
 
     socket.on("NEXT_TURN", (joueur) => {
@@ -660,11 +688,49 @@
     socket.on("GAME_END", () => {
         reset_game();
         console.log("Received GAME_END from server"); // log
+        afficher_scoreboard();
     });
 
     socket.on("GAME_STOP", (reason) => {
         reset_game();
         console.log("Received GAME_STOP from server: " + reason); // log
+    });
+
+    function recupere_biblio() {
+        // Retourne le tableau contenu de la biblio du joueur courant
+        const selection = d3.selectAll(".biblio").filter(function (d) {
+            return d && d.joueur === registered_name;
+        });
+
+        if (selection.size() === 0) {
+            console.log("Aucune bibliothèque trouvée pour " + registered_name);
+            return null;
+        }
+
+        const biblioData = selection.datum();
+        console.log("Récupération de la bibliothèque de " + registered_name);
+        return biblioData.contenu;
+    }
+
+    socket.on("REQUEST_BIBLIO", () => {
+        let biblio = recupere_biblio();
+        console.log("biblio demandé, envoi des scores au serveur: " + biblio); // log
+        socket.emit("SEND_BIBLIO", registered_name, biblio);
+    });
+
+    socket.on("SCORE_UPDATE", (dico, [joueur1, joueur2]) => {
+        my_score = dico[registered_name] || 0;
+        other_score = dico[other_player] || 0;
+
+        d3.selectAll(".biblio").filter(function (d) {
+            if (d.joueur === registered_name) {
+                d3.select(this).select("#score")
+                    .text(`Score: ${my_score}`);
+            } else if (d.joueur === other_player) {
+                d3.select(this).select("#score")
+                    .text(`Score: ${other_score}`);
+            }
+        });
     });
 
 </script>
