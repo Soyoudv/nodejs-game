@@ -1,8 +1,9 @@
 # nodejs-game
 *par Soheil et Prosper*
 
-jeu des bibliothèques connexions de joueurs via socket.io
-quand le jeu démarre, chacun prend un livre lorsque c'est son tour et le range dans sa bibliothèque pour faires des combos de points
+jeu des bibliothèques connexions de joueurs via socket.io<BR>
+<BR>
+Le jeu se joue en tour par tour. Chaque joueur dispose d'une bibliothèque qu'il doit remplir avec un livre qu'il choisit parmi 5 livres proposés à chaque tour. Chaque livre a un genre et un format. Le but du jeu est de maximiser le score de sa bibliothèque en fonction des livres choisis.<BR>
 
 ## Installation
 
@@ -27,4 +28,21 @@ lancer le serveur:
 node server.js
 ```
 
-ouvrir un navigateur à l'adresse http://localhost:8888
+### Pour se connecter sur le jeu:
+
+    ouvrir un navigateur à l'adresse http://localhost:8888<BR>
+
+### Pour y accéder depuis une autre machine du réseau local:
+
+    trouver l'adresse IP locale de la machine qui héberge le serveur:<BR>
+
+- sur **linux** :
+```bash
+hostname -I
+```
+- sur **windows** :
+```bash
+ipconfig
+```
+
+puis ouvrir un navigateur à l'adresse `http://(adresse_ip_locale):8888`<BR>
