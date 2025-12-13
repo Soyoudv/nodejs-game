@@ -24,6 +24,9 @@
         background-repeat: no-repeat;
         background-position: center;
         background-size: 125%;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        z-index: -2;
+        position: absolute;
     }
 
     .id {
@@ -301,14 +304,15 @@
             .attr("height", htotal)
             .attr("fill", "lightgray")
             .attr("stroke", registered_name == joueur ? "green" : "red")
-            .attr("stroke-width", 3);
+            .attr("stroke-width", 3)
+            .style("filter", "drop-shadow(0 0 10px rgba(0, 0, 0, 0.5))");
 
         for (var i = 0; i < l; i++) {
             biblioGroup.append("rect")
                 .attr("x", 10)
                 .attr("y", 10 + i * (h + 10))
                 .attr("fill", "darkgray")
-                .attr("width", w*c + 10*(c-1))
+                .attr("width", w * c + 10 * (c - 1))
                 .attr("height", h);
         }
 
@@ -318,7 +322,10 @@
             .attr("y", -10)
             .attr("text-anchor", "middle")
             .attr("font-size", "40px")
+            .attr("fill", "white")
+            .attr("filter", "drop-shadow(0 0 5px rgba(0, 0, 0, 1))")
             .text((joueur).toUpperCase()); // en majuscule
+
 
         biblioGroup.append("text")
             .attr("id", "score")
@@ -326,6 +333,8 @@
             .attr("y", htotal + 30)
             .attr("text-anchor", "middle")
             .attr("font-size", "30px")
+            .attr("fill", "white")
+            .attr("filter", "drop-shadow(0 0 5px rgba(0, 0, 0, 1))")
             .text(`Score: 0`); // en majuscule
 
         for (var i = 0; i < c; i++) {
@@ -514,7 +523,8 @@
             .attr("width", wtotal)
             .attr("height", htotal)
             .attr("fill", "lightgray")
-            .attr("stroke", "black");
+            .attr("stroke", "black")
+            .style("filter", "drop-shadow(0 0 10px rgba(0, 0, 0, 0.5))");
 
         for (let i = 0; i < n_livres; i++) {
             panneauGroup.append("rect")
@@ -649,10 +659,10 @@
         console.log("Game started between " + joueur1 + " and " + joueur2); // log
         game_going = true;
 
-        afficher_biblio(joueur1, 50, 50, 5, 4, 80); // joueur 1
-        afficher_biblio(joueur2, 670, 50, 5, 4, 80); // joueur 2
+        afficher_biblio(joueur1, 50, 75, 5, 4, 80); // joueur 1
+        afficher_biblio(joueur2, 670, 75, 5, 4, 80); // joueur 2
 
-        afficher_panneau_livres(5, 80, (1080 - (80 * 0.75 * 5 + 10 * 6)) / 2, 720 - 20 - 80 - 10); // panneau de livres
+        afficher_panneau_livres(5, 80, (1080 - (80 * 0.75 * 5 + 10 * 6)) / 2, 720 - 20 - 80 - 50); // panneau de livres
 
         other_player = joueur1 == registered_name ? joueur2 : joueur1;
     });
@@ -789,7 +799,18 @@
 
     <div class="game">
 
-        <div class="game_box"></div>
+        <div class="game_box">
+            <div style="
+                background-color: black;
+                opacity: 25%;
+                width: 1080px;
+                height: 720px;
+                position: absolute;
+                z-index: -1;
+                ">
+
+            </div>
+        </div>
 
         <p id="game_status"></p>
 
