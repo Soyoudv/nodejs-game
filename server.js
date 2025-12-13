@@ -104,7 +104,7 @@ function GAME_START() {
   io.emit("GAME_START", joueur1, joueur2);
 
   console.log("shuffling " + (2 * 20 + 10) + " books"); // log
-  n_turns = 2 * 20; // nombre de tours (2 joueurs, 20 tours chacun)
+  n_turns = 5; // nombre de tours (2 joueurs, 20 tours chacun)
   cur_turn = 0;
 
   flush_books(n_turns + 10); // tirer 40 livres au hasard + 10 de réserve
@@ -120,20 +120,23 @@ function GAME_START() {
 
 function NEXT_TURN() {
   if (n_turns === cur_turn) {
+    console.log("All turns completed"); // log
     GAME_END();
     return;
-  } else if (cur_turn % 2 === 0) {
-    io.emit("NEXT_TURN", joueur1);
-    console.log("Turn " + (cur_turn + 1) + " for " + joueur1); // log
-    io.emit('book', selected_books[cur_turn + 4], cur_turn + 5);
-    console.log("sending book n°" + (cur_turn + 5) + ": " + selected_books[cur_turn + 4].titre); // log
-  } else {
-    io.emit("NEXT_TURN", joueur2);
-    console.log("Turn " + (cur_turn + 1) + " for " + joueur2); // log
-    io.emit('book', selected_books[cur_turn + 4], cur_turn + 5);
-    console.log("sending book n°" + (cur_turn + 5) + ": " + selected_books[cur_turn + 4].titre); // log
   }
   cur_turn += 1;
+  console.log("TURN: " + cur_turn + "/" + n_turns); // log
+  if (cur_turn % 2 === 0) {
+    io.emit("NEXT_TURN", joueur1);
+    console.log("Turn " + (cur_turn) + " for " + joueur1); // log
+    io.emit('book', selected_books[cur_turn + 3], cur_turn + 3);
+    console.log("sending book n°" + (cur_turn + 3) + ": " + selected_books[cur_turn + 3].titre); // log
+  } else {
+    io.emit("NEXT_TURN", joueur2);
+    console.log("Turn " + (cur_turn) + " for " + joueur2); // log
+    io.emit('book', selected_books[cur_turn + 3], cur_turn + 3);
+    console.log("sending book n°" + (cur_turn + 3) + ": " + selected_books[cur_turn + 3].titre); // log
+  }
 }
 
 
