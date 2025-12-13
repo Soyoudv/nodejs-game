@@ -15,9 +15,27 @@
     body {
         font-family: "MS UI Gothic", sans-serif;
         background-size: cover;
+        display: flex;
     }
 
-    .game_box {
+    .id_player {
+        opacity: 0.25;
+        font-size: 0.8em;
+    }
+
+
+    #user-div {
+        position: absolute;
+        right: 10px;
+    }
+
+    #chat_div {
+        position: absolute;
+        margin-left: 20px;
+        right: 10px;
+    }
+
+    #game_box {
         width: 1080px;
         height: 720px;
         background-image: url('/images/donutsaucisse98.png');
@@ -27,11 +45,61 @@
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         z-index: -2;
         position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
     }
 
-    .id {
+
+    #background-darkness {
+        position: absolute;
+        background-color: black;
         opacity: 0.25;
-        font-size: 0.8em;
+        width: 1080px;
+        height: 720px;
+        z-index: -1;
+    }
+
+    #svg1 {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 0;
+    }
+
+
+    #join_status,
+    #chat_status,
+    #game_status,
+    #profile_status {
+        height: 20px;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        font-weight: bold;
+        z-index: 1;
+    }
+
+    #join_status {
+        bottom: 10px;
+    }
+
+    #chat_status {
+        position: absolute;
+        left: 10px;
+        bottom: 10px;
+    }
+
+    #profile_status {
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+    }
+
+    #game_status {
+        position: absolute;
+        left: 10px;
+        color: white;
+        text-shadow: 0 0 5px black;
     }
 </style>
 
@@ -70,9 +138,15 @@
     function display_for(where, message, n) {
         display_till_else(where, message);
 
-        setTimeout(function () { // Efface le message après n secondes
-            document.getElementById(where).innerText = "";
-        }, 1000 * n);
+        if (where != join_status) {
+            setTimeout(function () { // Efface le message après n secondes
+                document.getElementById(where).innerText = "";
+            }, 1000 * n);
+        } else {
+            setTimeout(function () { // Efface le message après n secondes
+                document.getElementById(where).innerHTML = "<BR>";
+            }, 1000 * n);
+        }
     }
 
     // PARTIE identification et chat
@@ -128,7 +202,7 @@
 
         // on affiche tous les éléments de la hashmap en la parcourant en tant que un tableau
         for (let i = 0; i < user_list.length; i++) {
-            document.getElementById("names").innerHTML += "<li><b>" + user_list[i] + "</b><b class='id'>#" + (i + 1) + "</b></li>";
+            document.getElementById("names").innerHTML += "<li><b>" + user_list[i] + "</b><b class='id_player'>#" + (i + 1) + "</b></li>";
         }
 
         if (user_list.length >= 1) {
@@ -177,7 +251,7 @@
 
     socket.on('receive_message', (id, name, message) => {
         console.log("Received message from " + name + ": " + message); // log
-        document.getElementById("messages").innerHTML += "<li><b>" + name + "</b><b class='id'>#" + id + "</b>: " + message + "</li>";
+        document.getElementById("messages").innerHTML += "<li><b>" + name + "</b><b class='id_player'>#" + id + "</b>: " + message + "</li>";
     })
 
 
@@ -773,22 +847,31 @@
 <!-- ------------------------------ HTML ------------------------------ -->
 
 <body>
-    <div class="profile">
-        <p id="profile_status"></p>
-    </div>
-    <div class="main">
+    
+    <div class="user" id="user_div">
 
         <input id="name_box" type="text" value=""></input>
         <button onclick="join()">Join</button>
         <button onclick="exit()">Exit</button>
-        <p id="join_status"></p>
+        <p id="join_status"><BR></p>
 
-        <p>User List:</p>
+        <p><b>User List:</b></p>
         <ul id="names"></ul>
+
+        <p id="profile_status"></p>
 
     </div>
 
-    <div class="chat">
+    <div class="game" id="game_div">
+
+        <div class="game_box" id="game_box">
+            <p id="game_status"></p>
+            <div id="background-darkness"></div>
+        </div>
+
+    </div>
+
+    <div class="chat" id="chat_div">
 
         <input id="message_box" type="text" value=""></input>
         <button onclick="send_message()">Send</button>
@@ -797,24 +880,7 @@
 
     </div>
 
-    <div class="game">
 
-        <div class="game_box">
-            <div style="
-                background-color: black;
-                opacity: 25%;
-                width: 1080px;
-                height: 720px;
-                position: absolute;
-                z-index: -1;
-                ">
-
-            </div>
-        </div>
-
-        <p id="game_status"></p>
-
-    </div>
 </body>
 
 </html>
