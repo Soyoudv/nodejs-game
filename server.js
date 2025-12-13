@@ -31,6 +31,10 @@ var selected_books = [];
 
 var joueur1 = "";
 var joueur2 = "";
+var dico_scores = {
+  joueur1: 0,
+  joueur2: 0
+};
 
 var n_turns = 0;
 var cur_turn = 0;
@@ -43,6 +47,10 @@ function reinitialize_all() {
   joueur2 = "";
   n_turns = 0;
   cur_turn = 0;
+  dico_scores = {
+    joueur1: 0,
+    joueur2: 0
+  };
 }
 
 
@@ -66,8 +74,6 @@ function exit_user(socket) {
   update_all_user_list(); // on renvoie à tout le monde
   socket.emit('exit_response', name, true, 'User exited successfully');
 }
-
-
 
 function flush_books(n) {
 
@@ -104,7 +110,7 @@ function GAME_START() {
   io.emit("GAME_START", joueur1, joueur2);
 
   console.log("shuffling " + (2 * 20 + 10) + " books"); // log
-  n_turns = 2*20; // nombre de tours (2 joueurs, 20 tours chacun)
+  n_turns = 40; // nombre de tours (2 joueurs, 20 tours chacun)
   cur_turn = 0;
 
   flush_books(n_turns + 10); // tirer 40 livres au hasard + 10 de réserve
@@ -137,15 +143,33 @@ function NEXT_TURN() {
     io.emit('book', selected_books[cur_turn + 3], cur_turn + 3);
     console.log("sending book n°" + (cur_turn + 3) + ": " + selected_books[cur_turn + 3].titre); // log
   }
-}
 
+  console.log("demande des scores"); // log
+  io.emit("REQUEST_BIBLIO");
+}
 
 function GAME_END() {
   console.log("----- GAME_END -----"); // log
   io.emit("GAME_END");
-  console.log("demande des scores"); // log
   reinitialize_all();
 }
+
+
+
+function calcul_score(biblio) { // PROVISOIRE (COMPTE JUSTE LE NOMBRE DE LIVRES)
+  let score = 0;
+  console.log(biblio)
+  for (let row of biblio) {
+    for (let book of row) {
+      if (book !== null) {
+        score += 1;
+      }
+    }
+  }
+  return score;
+}
+
+
 
 io.on('connection', (socket) => {
 
@@ -236,6 +260,17 @@ io.on('connection', (socket) => {
 
     NEXT_TURN();
   });
+
+  socket.on("SEND_BIBLIO", (joueur, biblio) => {
+    console.log("Received bibliography from " + joueur); // log
+    console.log(biblio); // log
+    var score = calcul_score(biblio);
+    console.log("Calculated score for " + joueur); // log
+
+    dico_scores[joueur] = score;
+    io.emit("SCORE_UPDATE", dico_scores, [joueur1, joueur2]);
+  });
+
 
 });
 
