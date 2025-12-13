@@ -104,7 +104,7 @@ function GAME_START() {
   io.emit("GAME_START", joueur1, joueur2);
 
   console.log("shuffling " + (2 * 20 + 10) + " books"); // log
-  n_turns = 5; // nombre de tours (2 joueurs, 20 tours chacun)
+  n_turns = 2*20; // nombre de tours (2 joueurs, 20 tours chacun)
   cur_turn = 0;
 
   flush_books(n_turns + 10); // tirer 40 livres au hasard + 10 de réserve

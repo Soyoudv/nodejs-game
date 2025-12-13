@@ -40,8 +40,14 @@
     var selected_book = null;
     var n_books = 5;
 
-    function display_for(where, message, n) {
+
+
+    function display_till_else(where, message) {
         document.getElementById(where).innerText = message;
+    }
+
+    function display_for(where, message, n) {
+        display_till_else(where, message);
 
         setTimeout(function () { // Efface le message après n secondes
             document.getElementById(where).innerText = "";
@@ -341,7 +347,7 @@
                                     bookDatum.slot_x = d.slot_x;
                                     bookDatum.slot_y = d.slot_y;
                                     selected_book.datum(bookDatum);
-                                        
+
                                     selected_book.select("rect") // deselectionner livre
                                         .attr("stroke-width", 1)
                                         .attr("stroke", "black");
@@ -513,7 +519,7 @@
         }).remove();
     }
 
-    function supprimer_livre_panneau(livre){ // suprimme un livre entièrement du panneau de livres
+    function supprimer_livre_panneau(livre) { // suprimme un livre entièrement du panneau de livres
         const panneau = d3.selectAll(".panneau_livres");
         const panneauData = panneau.datum();
 
@@ -568,7 +574,7 @@
         const x = panneauData.coord_x + 10 + pos * (panneauData.size_livre * 0.75 + 10);
         const y = panneauData.coord_y + 10;
         afficher_livre(panneauData.contenu[pos], x, y, "panneau"); // afficher le livre à la nouvelle position
-    
+
 
         panneau.datum(panneauData); // mettre à jour les données du panneau
     }
@@ -595,11 +601,11 @@
     socket.on("NEXT_TURN", (joueur) => {
         if (joueur == registered_name) {
             my_turn = true;
-            display_for("game_status", "It's your turn!", 5);
+            display_till_else("game_status", "It's your turn!");
             console.log("It's your turn!"); // log
         } else {
             my_turn = false;
-            display_for("game_status", "It's " + joueur + "'s turn", 5);
+            display_till_else("game_status", "It's " + joueur + "'s turn");
             console.log("It's " + joueur + "'s turn"); // log
         }
     });
@@ -612,7 +618,7 @@
     });
 
     socket.on("book_taken", (user_name, livre, pos_x, pos_y) => {
-        if (user_name != registered_name){
+        if (user_name != registered_name) {
 
             var truecords_x = 0;
             var truecords_y = 0;
@@ -635,6 +641,20 @@
 
             console.log(user_name + " has placed the book: " + livre.titre + " in position (" + pos_x + ", " + pos_y + ")"); // log
         }
+    });
+
+    function reset_game() {
+        game_going = false;
+        my_turn = false;
+        selected_book = null;
+        d3.selectAll("svg").remove(); // on supprime la zone de jeu
+        display_till_else("game_status", "Game has ended.");
+        console.log("Game has ended."); // log
+    }
+
+    socket.on("GAME_END", () => {
+        reset_game();
+        console.log("Received GAME_END from server"); // log
     });
 
 </script>
