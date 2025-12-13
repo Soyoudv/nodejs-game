@@ -37,6 +37,9 @@
     var game_going = false;
     var my_turn = false;
 
+    var selected_book = null;
+    var n_books = 5;
+
     function display_for(where, message, n) {
         document.getElementById(where).innerText = message;
 
@@ -160,6 +163,101 @@
 
     // fonctions pour le jeu:
 
+    function tailleDynamique(size, title) { // fonction pour calculer la taille de police en fonction de la longueur du titre
+        const max = size * 0.13;                 // taille maxi relative
+        const min = size * 0.06;                 // taille mini relative
+        const penalty = title.length * (size * 0.002);
+
+        return Math.max(min, max - penalty);
+    }
+
+    function wrapText(textSelection, width) { // fonction compliquée pour coupe le texte en plusieurs lignes si trop long
+        textSelection.each(function () {
+            const text = d3.select(this);
+            const words = text.text().split(/\s+/).reverse();
+            let word;
+            let line = [];
+            let lineNumber = 0;
+            const lineHeight = 1.1; //en em
+            const y = text.attr("y");
+            const dy = 0;
+
+            let tspan = text.text(null)
+                .append("tspan")
+                .attr("x", text.attr("x"))
+                .attr("y", y)
+                .attr("dy", dy + "em");
+
+            while (word = words.pop()) {
+                line.push(word);
+                tspan.text(line.join(" "));
+                if (tspan.node().getComputedTextLength() > width) {
+                    line.pop();
+                    tspan.text(line.join(" "));
+                    line = [word];
+                    if (++lineNumber > 1) break; // max 2 lignes
+                    tspan = text.append("tspan")
+                        .attr("x", text.attr("x"))
+                        .attr("y", y)
+                        .attr("dy", lineNumber * lineHeight + dy + "em")
+                        .text(word);
+                }
+            }
+        });
+    }
+
+    function matchCouleurGenre(genre) { // fonction pour associer une couleur à un genre
+        const couleurs = { // que des couleurs différentes pour bien voir
+            "anglo-saxonne": "brown",
+            "aventures": "green",
+            "essai": "purple",
+            "fantasy": "dark_green",
+            "feelgood": "orange",
+            "humour": "yellow",
+            "poésie": "lime",
+            "policier": "blue",
+            "roman": "pink",
+            "russe": "cyan",
+            "sf": "dark_blue",
+            "théâtre": "red",
+            "thriller": "dark_red"
+        };
+        return couleurs[genre] || "gray"; // Couleur par défaut si le genre n'est pas reconnu
+    }
+
+    function matchCouleurFormat(format) { // fonction pour associer une couleur à un format
+        const couleurs = {
+            "grand": "#ffffff",
+            "maxi": "#FFF9ED",
+            "medium": "#FFF3F2",
+            "poche": "#FFE9D6"
+        };
+        return couleurs[format] || "gray"; // Couleur par défaut si le format n'est pas reconnu
+    }
+
+    function get_nomprenom_list(nom, prenomnom) {
+        let nom_list = nom.split(' ');
+        let prenomnom_list = prenomnom.split(' ');
+        let prenom = [];
+        for (var i = 0; i < prenomnom_list.length - nom_list.length; i++) {
+            prenom.push(prenomnom_list[i]);
+        }
+        var nomprenom_list = [];
+        nomprenom_list = nomprenom_list.concat(nom_list, prenom);
+        return nomprenom_list;
+    }
+
+    function get_innitiales(nom, prenom) {
+        var nomreprenom_list = get_nomprenom_list(nom, prenom);
+        let innitiales = [];
+        for (var i = 0; i < nomreprenom_list.length; i++) {
+            if (nomreprenom_list[i] != 'de' && nomreprenom_list[i] != 'le') {
+                innitiales.push(nomreprenom_list[i][0]);
+            }
+        }
+        return innitiales;
+    }
+
     function afficher_biblio(joueur, x, y, l, c, size) {
         const w = size * (0.75)
         const h = size
@@ -207,14 +305,14 @@
                         coord_x: 10 + i * (w + 10),
                         coord_y: 10 + j * (h + 10)
                     })
-                    .on("hover", function (event, d) {
-                        if (mon_tour) {
-                            if (full === false) {
+                    .on("mouseover", function (event, d) {
+                        if (my_turn) {
+                            if (dl === false) {
                                 d3.select(this)
-                                    .attr("fill", "dark_green");
+                                    .attr("fill", "darkgreen");
                             } else {
                                 d3.select(this)
-                                    .attr("fill", "dark_red");
+                                    .attr("fill", "darkred");
                             }
                         }
                     })
@@ -223,7 +321,7 @@
                             .attr("fill", "darkgray");
                     })
                     .on("click", function (event, d) {
-                        if (mon_tour) {
+                        if (my_turn) {
                             if (selected_book !== null) {
                                 let biblioData = biblioGroup.datum();
 
@@ -242,7 +340,7 @@
                                     selected_book = null;
 
                                     d.full = true;
-                                    mon_tour = false; // fin du tour après avoir placé le livre
+                                    my_turn = false; // fin du tour après avoir placé le livre
 
                                     socket.emit("end_turn", bookData.livre); // prévenir le serveur de la fin du tour
 
@@ -320,7 +418,7 @@
 
         d3.selectAll(".book")
             .on("click", function (event, d) {
-                if (mon_tour) {
+                if (my_turn) {
                     if (selected_book) {
                         selected_book.select("rect")
                             .attr("stroke-width", 1)
@@ -394,6 +492,7 @@
 
     socket.on("book", (book, index) => {
         afficher_livre_plat(book, index, 80);
+        // deplacer le livre dans le panneau de livres
     });
 
 </script>
