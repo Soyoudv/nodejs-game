@@ -9,16 +9,21 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
+
 <!-- ------------------------------ CSS ------------------------------ -->
 <style>
     body {
         font-family: "MS UI Gothic", sans-serif;
+        background-size: cover;
     }
 
     .game_box {
         width: 1080px;
         height: 720px;
-        background-color: darkgray;
+        background-image: url('/images/donutsaucisse98.png');
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 125%;
     }
 
     .id {
@@ -26,6 +31,7 @@
         font-size: 0.8em;
     }
 </style>
+
 <!-- ---------------------------- JAVASCRIPT ---------------------------- -->
 <script>
 
@@ -182,7 +188,7 @@
         return Math.max(min, max - penalty);
     }
 
-    function wrapText(textSelection, width) { // fonction compliquée pour coupe le texte en plusieurs lignes si trop long
+    function wrapText(textSelection, width) { // fonction compliquée pour coupe le texte en plusieurs lignes si trop long // pas utilisée
         textSelection.each(function () {
             const text = d3.select(this);
             const words = text.text().split(/\s+/).reverse();
@@ -271,11 +277,11 @@
 
     // PARTIE affichage du jeu
 
-    function afficher_biblio(joueur, x, y, l, c, size) {
+    function afficher_biblio(joueur, x, y, c, l, size) {
         const w = size * (0.75)
         const h = size
-        const wtotal = l * size * (0.75) + (l + 1) * 10
-        const htotal = c * size + (c + 1) * 10
+        const wtotal = c * size * (0.75) + (c + 1) * 10
+        const htotal = l * size + (l + 1) * 10
 
         const biblioGroup = d3.select("#svg1")
             .append("g")
@@ -285,9 +291,9 @@
                 joueur: joueur,
                 coord_x: x,
                 coord_y: y,
-                lignes: l,
                 colonnes: c,
-                contenu: Array.from({ length: l }, () => Array.from({ length: c }, () => null))
+                lignes: l,
+                contenu: Array.from({ length: c }, () => Array.from({ length: l }, () => null))
             });
 
         biblioGroup.append("rect")
@@ -296,6 +302,15 @@
             .attr("fill", "lightgray")
             .attr("stroke", registered_name == joueur ? "green" : "red")
             .attr("stroke-width", 3);
+
+        for (var i = 0; i < l; i++) {
+            biblioGroup.append("rect")
+                .attr("x", 10)
+                .attr("y", 10 + i * (h + 10))
+                .attr("fill", "darkgray")
+                .attr("width", w*c + 10*(c-1))
+                .attr("height", h);
+        }
 
         biblioGroup.append("text")
             .attr("id", "nom")
@@ -313,8 +328,8 @@
             .attr("font-size", "30px")
             .text(`Score: 0`); // en majuscule
 
-        for (var i = 0; i < l; i++) {
-            for (var j = 0; j < c; j++) {
+        for (var i = 0; i < c; i++) {
+            for (var j = 0; j < l; j++) {
                 biblioGroup.append("rect")
                     .attr("class", "biblio_slot")
                     .attr("x", 10 + i * (w + 10))
@@ -522,7 +537,7 @@
             .attr("id", "svg1")
             .attr("width", 1080)
             .attr("height", 720);
-            
+
         d3.select("#svg1")
             .append("text")
             .attr("x", 1080 / 2)
@@ -534,7 +549,7 @@
             .text(`THIS IS THE SCOREBOARD`);
     }
 
-// PARTIE fonctions (le reste du code jeu)
+    // PARTIE fonctions (le reste du code jeu)
 
     function est_vide_panneau_indice() { // donne l'indice de la case vide du panneau de livres, ou -1 si pleine
         let panneauData = d3.selectAll(".panneau_livres").datum();
@@ -718,9 +733,8 @@
             return null;
         }
 
-        const biblioData = selection.datum();
         console.log("Récupération de la bibliothèque de " + registered_name);
-        return biblioData.contenu;
+        return selection.datum().contenu;
     }
 
     socket.on("REQUEST_BIBLIO", () => {
