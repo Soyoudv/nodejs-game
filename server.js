@@ -94,8 +94,8 @@ function GAME_START() {
   console.log("----- GAME_START -----"); // log
   game_going = true;
 
-  var joueur1 = user_list[0]; //désignation des joueurs (2 premiers de la liste)
-  var joueur2 = user_list[1];
+  joueur1 = user_list[0]; //désignation des joueurs (2 premiers de la liste)
+  joueur2 = user_list[1];
   users_playing = [joueur1, joueur2];
 
   console.log("Game started between " + joueur1 + " and " + joueur2); // log
@@ -104,8 +104,8 @@ function GAME_START() {
   io.emit("GAME_START", joueur1, joueur2);
 
   console.log("shuffling " + (2 * 20) + " books"); // log
-  var n_turns = 2 * 20; // nombre de tours (2 joueurs, 20 tours chacun)
-  var current_turn = 0;
+  n_turns = 2 * 20; // nombre de tours (2 joueurs, 20 tours chacun)
+  cur_turn = 0;
 
   flush_books(n_turns); // tirer 40 livres au hasard
 
@@ -124,12 +124,12 @@ function NEXT_TURN() {
     return;
   } else if (cur_turn % 2 === 0) {
     console.log("Turn " + (cur_turn + 1) + " for " + joueur1); // log
-    io.emit("NEXT_TURN", joueur1);
+    io.emit("NEXT_TURN", joueur1); console.log("Turn " + (cur_turn + 1) + " for " + joueur1); // log
     io.emit('book', selected_books[cur_turn + 4], cur_turn + 5);
     console.log("sending book n°" + (cur_turn + 5) + ": " + selected_books[cur_turn + 4].titre); // log
   } else {
     console.log("Turn " + (cur_turn + 1) + " for " + joueur2); // log
-    io.emit("NEXT_TURN", joueur2);
+    io.emit("NEXT_TURN", joueur2); console.log("Turn " + (cur_turn + 1) + " for " + joueur2); // log
     io.emit('book', selected_books[cur_turn + 4], cur_turn + 5);
     console.log("sending book n°" + (cur_turn + 5) + ": " + selected_books[cur_turn + 4].titre); // log
   }
@@ -228,7 +228,7 @@ io.on('connection', (socket) => {
 
 
   socket.on("end_turn", (user_name, livre, pos_x, pos_y) => {
-    console.log("tour terminé pour: " + user_list[userid_list.indexOf(socket.id)] + ", il a pris le livre: " + livre); // log
+    console.log("tour terminé pour: " + user_list[userid_list.indexOf(socket.id)] + ", il a pris le livre: " + livre.titre + " et mis en position (" + pos_x + ", " + pos_y + ")"); // log
     io.emit("book_taken", user_name, livre, pos_x, pos_y)
   });
 

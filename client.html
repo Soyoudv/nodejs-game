@@ -342,7 +342,7 @@
                                     d.full = true;
                                     my_turn = false; // fin du tour après avoir placé le livre
 
-                                    socket.emit("end_turn", registered_name, bookData, d.slot_y, d.slot_y); // prévenir le serveur de la fin du tour
+                                    socket.emit("end_turn", registered_name, bookData, d.slot_x, d.slot_y); // prévenir le serveur de la fin du tour
 
                                     console.log(`Livre ajouté à la bibliothèque de ${biblioData.joueur} en position (${d.slot_x}, ${d.slot_y})`);
 
@@ -498,6 +498,19 @@
         }).remove();
     }
 
+    function supprimer_livre_panneau(livre){ // suprimme un livre entièrement du panneau de livres
+        const panneau = d3.selectAll(".panneau_livres");
+        const panneauData = panneau.datum();
+
+        for (var i = 0; i < panneauData.slots; i++) {
+            if (panneauData.contenu[i] === livre) {
+                panneauData.contenu[i] = null;
+                break;
+            }
+        }
+        panneau.datum(panneauData); // mettre à jour les données du panneau
+    }
+
     function pousser_panneau_livres() {
         // compacte tous les livres vers la droite en mettant à jour uniquement les données
         const panneau = d3.selectAll(".panneau_livres");
@@ -584,10 +597,29 @@
     });
 
     socket.on("book_taken", (user_name, livre, pos_x, pos_y) => {
-        // afficher un livre dans un emplacement de bibliothèque donné
-        // reconnaitre bibliothèque par nom de joueur
-        // transformer les coordonnées biblio en coordonnées svg
-        // déplacer le livre dans la bibliothèque et mettre à jour le contenu
+        if (user_name != registered_name){
+
+            var truecords_x = 0;
+            var truecords_y = 0;
+
+            const biblios = d3.selectAll(".biblio").nodes();
+
+            for (var i = 0; i < biblios.length; i++) {
+                const biblioData = d3.select(biblios[i]).datum();
+                if (biblioData.joueur == user_name) {
+                    truecords_x = biblioData.coord_x + pos_x * (80 * 0.75 + 10) + 10;
+                    truecords_y = biblioData.coord_y + pos_y * (80 + 10) + 10;
+                    break;
+                }
+            }
+
+            afficher_livre(livre, truecords_x, truecords_y);
+
+            supprimer_livre_panneau(livre);
+            pousser_panneau_livres();
+
+            console.log(user_name + " has placed the book: " + livre.titre + " in position (" + pos_x + ", " + pos_y + ")"); // log
+        }
     });
 
 </script>
