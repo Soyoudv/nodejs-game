@@ -112,7 +112,7 @@ function GAME_START() {
   // sending 4 first books to clients: (5th book will be sent at NEXT_TURN)
   for (var i = 0; i < 4; i++) {
     io.emit('book', selected_books[i], i + 1);
-    console.log("sending book " + selected_books[i].titre); // log
+    console.log("sending book n°" + (i + 1) + ": " + selected_books[i].titre); // log
   }
 
   NEXT_TURN();
@@ -125,16 +125,16 @@ function NEXT_TURN() {
   } else if (cur_turn % 2 === 0) {
     console.log("Turn " + (cur_turn + 1) + " for " + joueur1); // log
     io.emit("NEXT_TURN", joueur1);
-    io.emit('book', selected_books[cur_turn + 4]);
+    io.emit('book', selected_books[cur_turn + 4], cur_turn + 5);
+    console.log("sending book n°" + (cur_turn + 5) + ": " + selected_books[cur_turn + 4].titre); // log
   } else {
     console.log("Turn " + (cur_turn + 1) + " for " + joueur2); // log
     io.emit("NEXT_TURN", joueur2);
-    io.emit('book', selected_books[cur_turn + 4]);
+    io.emit('book', selected_books[cur_turn + 4], cur_turn + 5);
+    console.log("sending book n°" + (cur_turn + 5) + ": " + selected_books[cur_turn + 4].titre); // log
   }
   cur_turn += 1;
 }
-
-//   NEXT_TURN(socket); // appel récursif pour le tour suivant
 
 
 function GAME_END() {
@@ -224,6 +224,12 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => { // when a user disconnects, remove them from the user list and tell to everyone
     exit_user(socket);
+  });
+
+
+  socket.on("end_turn", (user_name, livre, pos_x, pos_y) => {
+    console.log("tour terminé pour: " + user_list[userid_list.indexOf(socket.id)] + ", il a pris le livre: " + livre); // log
+    io.emit("book_taken", user_name, livre, pos_x, pos_y)
   });
 
 });

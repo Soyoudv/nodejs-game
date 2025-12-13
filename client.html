@@ -307,21 +307,21 @@
                     })
                     .on("mouseover", function (event, d) {
                         if (my_turn) {
-                            if (dl === false) {
-                                d3.select(this)
+                            if (d.full === false) {
+                                d3.select()
                                     .attr("fill", "darkgreen");
                             } else {
-                                d3.select(this)
+                                d3.select()
                                     .attr("fill", "darkred");
                             }
                         }
                     })
                     .on("mouseout", function (event, d) {
-                        d3.select(this)
+                        d3.select()
                             .attr("fill", "darkgray");
                     })
                     .on("click", function (event, d) {
-                        if (my_turn) {
+                        if (my_turn && registered_name == biblioGroup.datum().joueur) {
                             if (selected_book !== null) {
                                 let biblioData = biblioGroup.datum();
 
@@ -342,7 +342,7 @@
                                     d.full = true;
                                     my_turn = false; // fin du tour après avoir placé le livre
 
-                                    socket.emit("end_turn", bookData.livre); // prévenir le serveur de la fin du tour
+                                    socket.emit("end_turn", registered_name, bookData, d.slot_y, d.slot_y); // prévenir le serveur de la fin du tour
 
                                     console.log(`Livre ajouté à la bibliothèque de ${biblioData.joueur} en position (${d.slot_x}, ${d.slot_y})`);
 
@@ -356,11 +356,9 @@
         }
     }
 
-    function afficher_livre_plat(book, index, size, initials) {
+    function afficher_livre_plat(book, x, y, size) {
         const w = size * (0.75);
         const h = size;
-        const x = 10 + size * (index - Math.floor(n_books / 10) * 10 - 1);
-        const y = 10 + Math.floor(n_books / 10) * (size + 10);
         const imgSize = size * 0.5;
 
         const innitiales = get_innitiales(book.nom || book.auteur.split(' ').pop(), book.auteur);
@@ -437,10 +435,10 @@
     }
 
     function afficher_panneau_livres(n_livres, size_livre, x, y) {
-        let w = size_livre * (0.75);
-        let h = size_livre;
-        let wtotal = n_livres * w + (n_livres + 1) * 10;
-        let htotal = h + 10 * 2;
+        let wlivre = size_livre * (0.75);
+        let hlivre = size_livre;
+        let wtotal = n_livres * wlivre + (n_livres + 1) * 10;
+        let htotal = hlivre + 10 * 2;
         const panneauGroup = d3.select("#svg1")
             .append("g")
             .attr("class", "panneau_livres")
@@ -448,7 +446,10 @@
             .datum({
                 full: false,
                 slots: n_livres,
-                contenu: Array.from({ length: n_livres }, () => null)
+                contenu: Array.from({ length: n_livres }, () => null),
+                coord_x: x,
+                coord_y: y,
+                size_livre: size_livre
             });
 
         panneauGroup.append("rect")
@@ -459,20 +460,93 @@
 
         for (let i = 0; i < n_livres; i++) {
             panneauGroup.append("rect")
-                .attr("x", 10 + i * (w + 10))
+                .attr("x", 10 + i * (wlivre + 10))
                 .attr("y", 10)
-                .attr("width", w)
-                .attr("height", h)
+                .attr("width", wlivre)
+                .attr("height", hlivre)
                 .attr("fill", "darkgray")
                 .datum({
-                    coord_x: 10 + i * (w + 10),
+                    coord_x: 10 + i * (wlivre + 10),
                     coord_y: 10,
                     slotid: i
                 });
         }
     }
 
+    function est_vide_panneau_indice() { // donne l'indice de la case vide du panneau de livres, ou -1 si pleine
+        let panneauData = d3.selectAll(".panneau_livres").datum();
+        for (var i = 0; i < panneauData.slots; i++) {
+            if (panneauData.contenu[i] === null) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    function est_plein_panneau() {
+        return est_vide_panneau_indice() === -1;
+    }
+
+    function afficher_livre(book, x, y) {
+        // affiche un livre à des coordonnées données
+        afficher_livre_plat(book, x, y, 80);
+    }
+
+    function supprimer_livre(book) { // suprime l'affichage du livre donné
+        d3.selectAll(".book").filter(function (d) {
+            return d.livre === book;
+        }).remove();
+    }
+
+    function pousser_panneau_livres() {
+        // compacte tous les livres vers la droite en mettant à jour uniquement les données
+        const panneau = d3.selectAll(".panneau_livres");
+        const panneauData = panneau.datum();
+        if (!panneauData || !Array.isArray(panneauData.contenu)) return;
+
+        let write = panneauData.slots - 1;
+        for (let read = panneauData.slots - 1; read >= 0; read--) {
+            if (panneauData.contenu[read] !== null) {
+                if (read !== write) {
+                    panneauData.contenu[write] = panneauData.contenu[read]; // déplacer le livre dans les données
+
+                    supprimer_livre(panneauData.contenu[read]); // supprimer l'affichage du livre à l'ancienne position
+
+                    panneauData.contenu[read] = null; // vider l'ancienne position
+
+                    const x = panneauData.coord_x + 10 + write * (panneauData.size_livre * 0.75 + 10);
+                    const y = panneauData.coord_y + 10;
+                    afficher_livre(panneauData.contenu[write], x, y); // afficher le livre à la nouvelle position
+                }
+                write--;
+            }
+        }
+        panneau.datum(panneauData); // mettre à jour les données du panneau
+    }
+
+    function ajouter_livre_panneau(book, size_livre) {
+        const panneau = d3.selectAll(".panneau_livres");
+        const panneauData = panneau.datum();
+
+        // find pos:
+        const pos = est_vide_panneau_indice();
+        if (pos === -1) {
+            console.log("Panneau de livres plein, impossible d'ajouter le livre");
+            return;
+        }
+
+        panneauData.contenu[pos] = book; // déplacer le livre dans les données
+
+        const x = panneauData.coord_x + 10 + pos * (panneauData.size_livre * 0.75 + 10);
+        const y = panneauData.coord_y + 10;
+        afficher_livre(panneauData.contenu[pos], x, y); // afficher le livre à la nouvelle position
+    
+
+        panneau.datum(panneauData); // mettre à jour les données du panneau
+    }
+
     socket.on("GAME_START", (joueur1, joueur2) => {
+        display_for("game_status", "Game started between " + joueur1 + " and " + joueur2, 5);
         // AFFICHAGE dans game_box
         d3.selectAll("svg").remove(); // on supprime l'ancienne zone de jeu s'il y en a une
         const svg = d3.select(".game_box")
@@ -490,9 +564,30 @@
 
     });
 
+    socket.on("NEXT_TURN", (joueur) => {
+        if (joueur == registered_name) {
+            my_turn = true;
+            display_for("game_status", "It's your turn!", 5);
+            console.log("It's your turn!"); // log
+        } else {
+            my_turn = false;
+            display_for("game_status", "It's " + joueur + "'s turn", 5);
+            console.log("It's " + joueur + "'s turn"); // log
+        }
+    });
+
     socket.on("book", (book, index) => {
-        afficher_livre_plat(book, index, 80);
         // deplacer le livre dans le panneau de livres
+        console.log("Book n°" + index + " received: " + book.titre); // log
+        pousser_panneau_livres();
+        ajouter_livre_panneau(book, 80);
+    });
+
+    socket.on("book_taken", (user_name, livre, pos_x, pos_y) => {
+        // afficher un livre dans un emplacement de bibliothèque donné
+        // reconnaitre bibliothèque par nom de joueur
+        // transformer les coordonnées biblio en coordonnées svg
+        // déplacer le livre dans la bibliothèque et mettre à jour le contenu
     });
 
 </script>
