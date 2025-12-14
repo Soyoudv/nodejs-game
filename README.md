@@ -65,6 +65,12 @@ meynard place un livre:<BR>
 ![plot](./screenshots/meynard_placement.png)<BR>
 meynard obtient un combo:<BR>
 ![plot](./screenshots/meynard_combo.png)<BR>
+la partie est presque finie:<BR>
+![plot](./screenshots/presque_fin.png)<BR>
+l'opposant politique gagne:<BR>
+![plot](./screenshots/opposant_wins.png)<BR>
+
+*pour recommencer la partie, il faut qu'un des joueurs se déconnecte et se reconnecte.*
 
 ## Lien du projet:
 https://github.com/Soyoudv/nodejs-game
