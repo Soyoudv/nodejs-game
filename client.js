@@ -321,15 +321,15 @@ function afficher_biblio(joueur, x, y, c, l, size) {
                 })
                 .on("mouseover", function (event, d) {
                     if (registered_name == biblioGroup.datum().joueur) {
-                        if (d.full === false) {
-                            d3.select(this).attr("fill", "darkgreen");
-                        } else {
-                            d3.select(this).attr("fill", "darkred");
-                        }
+                        d3.select(this).transition()
+                            .duration('0')
+                            .attr("fill", "gray");
                     }
                 })
                 .on("mouseout", function (event, d) {
-                    d3.select(this).attr("fill", "darkgray");
+                    d3.select(this).transition()
+                        .duration('50')
+                        .attr("fill", "darkgray");
                 })
                 .on("click", function (event, d) {
                     if (my_turn && registered_name == biblioGroup.datum().joueur) {
@@ -405,10 +405,20 @@ function afficher_livre_plat(book, x, y, size, loc) {
         });
 
     bookGroup.append("rect")
+        .attr("class", "book_cover")
         .attr("width", w)
         .attr("height", h)
         .attr("fill", couleurFormat)
         .attr("stroke", "black");
+
+    bookGroup.append("rect")
+        .attr("class", "book_select")
+        .attr("width", w)
+        .attr("height", h)
+        .attr("fill", "#00000000")
+        .attr("stroke", "#00000000")
+        .attr("stroke-width", 2);
+
 
     bookGroup.append("text")
         .attr("id", "nom")
@@ -443,6 +453,16 @@ function afficher_livre_plat(book, x, y, size, loc) {
         .attr("width", w)
         .attr("height", h)
         .attr("fill", "#00000000")
+        .on("mouseover", function (event, d) {
+            d3.select(this.parentNode).select(".book_select").transition()
+                .duration('0')
+                .attr("stroke", "white");
+        })
+        .on("mouseout", function (event, d) {
+            d3.select(this.parentNode).select(".book_select").transition()
+                .duration('400')
+                .attr("stroke", "#00000000");
+        })
 
     d3.selectAll(".book")
         .on("click", function (event, d) {
