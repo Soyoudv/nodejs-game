@@ -374,7 +374,9 @@ function afficher_livre_plat(book, x, y, size, loc) {
         .attr("width", w)
         .attr("height", h)
         .attr("fill", couleurFormat)
-        .attr("stroke", "black");
+        .attr("stroke", "black")
+        .attr("stroke", "#00000000")
+        .attr("stroke-width", 2);
 
     bookGroup.append("rect")
         .attr("class", "book_select")
@@ -442,12 +444,12 @@ function afficher_livre_plat(book, x, y, size, loc) {
                     console.log("Livre pris du panneau de livres");
                 }
                 if (selected_book) {
-                    selected_book.select("rect")
+                    selected_book.select(".book_cover")
                         .attr("stroke-width", 1)
                         .attr("stroke", "black");
                 }
                 selected_book = d3.select(this);
-                selected_book.select("rect")
+                selected_book.select(".book_cover")
                     .attr("stroke-width", 2)
                     .attr("stroke", "black");
 
