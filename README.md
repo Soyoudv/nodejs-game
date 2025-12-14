@@ -30,11 +30,11 @@ node server.js
 
 ### Pour se connecter sur le jeu:
 
-    ouvrir un navigateur à l'adresse http://localhost:8888<BR>
+ouvrir un navigateur à l'adresse http://localhost:8888
 
 ### Pour y accéder depuis une autre machine du réseau local:
 
-    trouver l'adresse IP locale de la machine qui héberge le serveur:<BR>
+trouver l'adresse IP locale de la machine qui héberge le serveur:
 
 - sur **linux** :
 ```bash
@@ -71,6 +71,9 @@ l'opposant politique gagne:<BR>
 ![plot](./screenshots/opposant_wins.png)<BR>
 
 *pour recommencer la partie, il faut qu'un des joueurs se déconnecte et se reconnecte.*
+
+un chat est aussi implémenté pour envoyer des mots d'amour à ses opposants politiques:<BR>
+![plot](./screenshots/chat.png)<BR>
 
 ## Lien du projet:
 https://github.com/Soyoudv/nodejs-game
