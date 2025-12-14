@@ -14,6 +14,10 @@ app.get('/client.js', (req, res) => {
   res.sendFile(__dirname + '/client.js');
 });
 
+app.get('/styles.css', (req, res) => {
+  res.sendFile(__dirname + '/styles.css');
+});
+
 app.get('/', (req, res) => { // Envoie au client le fichier client.html
   res.sendFile(__dirname + '/client.html');
 });
