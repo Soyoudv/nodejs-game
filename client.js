@@ -14,6 +14,9 @@ var n_books = 5;
 
 var other_player = null;
 
+var my_score = 0;
+var other_score = 0;
+
 onload = function () {
     document.getElementById("name_box").value = "";
     document.getElementById("message_box").value = "";
@@ -505,15 +508,41 @@ function afficher_scoreboard() {
         .attr("width", 1080)
         .attr("height", 720);
 
-    d3.select("#svg1")
-        .append("text")
+    svg.append("rect")
+        .attr("class", "scoreboard_bg")
+        .attr("width", 1080-100)
+        .attr("height", 720-100)
+        .attr("x", 50)
+        .attr("y", 50)
+        .attr("fill", "#EEEEEEAA")
+        .attr("backdrop-filter", "blur(5px)")
+
+    svg.append("text")
         .attr("x", 1080 / 2)
-        .attr("y", 720 / 2)
+        .attr("y", 720 / 2 - 100)
         .attr("text-anchor", "middle")
         .attr("font-size", "60px")
         .attr("font-weight", "bold")
         .attr("fill", "black")
-        .text(`THIS IS THE SCOREBOARD`);
+        .text(`Final Scores:`);
+
+    svg.append("text")
+        .attr("x", 1080 / 2)
+        .attr("y", 720 / 2)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "50px")
+        .attr("font-weight", "bold")
+        .attr("fill", "black")
+        .text(`${registered_name}: ${my_score} - ${other_player}: ${other_score}`);
+
+    svg.append("text")
+        .attr("x", 1080 / 2)
+        .attr("y", 720 / 2 + 100)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "70px")
+        .attr("font-weight", "bold")
+        .attr("fill", "black")
+        .text(`${my_score > other_score ? registered_name + " Wins!" : (my_score < other_score ? other_player + " Wins!" : "It's a Tie!")}`);
 }
 
 // PARTIE fonctions (le reste du code jeu)
