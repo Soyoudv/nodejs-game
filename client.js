@@ -21,7 +21,7 @@ onload = function () {
     document.getElementById("name_box").value = "";
     document.getElementById("message_box").value = "";
     // on vide les boites à l'entrée d'une personne dans le site
-    socket.emit('request_id');
+    socket.emit("request_id");
 }
 
 // PARTIE fonctions display
@@ -46,7 +46,7 @@ function display_for(where, message, n) {
 
 // PARTIE identification et chat
 
-socket.on('receive_id', (id) => {
+socket.on("receive_id", (id) => {
     my_id = id;
     console.log("Id given to newly connected user: " + my_id); // log
 });
@@ -80,7 +80,7 @@ socket.on("join_response", (name, success, message) => {
 });
 
 
-socket.on('exit_response', (name, success, message) => {
+socket.on("exit_response", (name, success, message) => {
     if (success) {
         display_for("join_status", "User " + name + " has exited", 3);
         console.log("Exit successful for " + name); // log
@@ -91,7 +91,7 @@ socket.on('exit_response', (name, success, message) => {
 });
 
 
-socket.on('update_user_list', (user_list, userid_list, user_needed, user_max) => {
+socket.on("update_user_list", (user_list, userid_list, user_needed, user_max) => {
 
     document.getElementById("names").innerHTML = ""; // vide la boîte
 
@@ -144,21 +144,13 @@ function send_message() {
     }
 }
 
-socket.on('receive_message', (id, name, message) => {
+socket.on("receive_message", (id, name, message) => {
     console.log("Received message from " + name + ": " + message); // log
     document.getElementById("messages").innerHTML += "<li><b>" + name + "</b><b class='id_player'>#" + id + "</b>: " + message + "</li>";
 })
 
 
 // PARTIE fonctions pour le jeu
-
-function tailleDynamique(size, title) { // fonction pour calculer la taille de police en fonction de la longueur du titre
-    const max = size * 0.13;                 // taille maxi relative
-    const min = size * 0.06;                 // taille mini relative
-    const penalty = title.length * (size * 0.002);
-
-    return Math.max(min, max - penalty);
-}
 
 function matchCouleurGenre(genre) { // fonction pour associer une couleur à un genre
     const couleurs = { // que des couleurs différentes pour bien voir
@@ -290,13 +282,13 @@ function afficher_biblio(joueur, x, y, c, l, size) {
                 .on("mouseover", function (event, d) {
                     if (registered_name == biblioGroup.datum().joueur) {
                         d3.select(this).transition()
-                            .duration('0')
+                            .duration("0")
                             .attr("fill", "gray");
                     }
                 })
                 .on("mouseout", function (event, d) {
                     d3.select(this).transition()
-                        .duration('50')
+                        .duration("50")
                         .attr("fill", "darkgray");
                 })
                 .on("click", function (event, d) {
@@ -352,14 +344,11 @@ function afficher_livre_plat(book, x, y, size, loc) {
     const imgSize = size * 0.5;
 
     const innitiales = get_innitiales(book.nom || book.auteur.split(' ').pop(), book.auteur);
-    // on récupère les innitiales de l'auteur à partir du nom complet et du nom, s'il n'y a pas de prénom, on récupère juste le premier mot en tant que prénom
+    // on récupère les innitiales de l'auteur à partir du nom complet et du nom, s'il n'y a pas de prénom, on récupère juste le premier mot
 
     const couleurGenre = matchCouleurGenre(book.genre);
     const couleurFormat = matchCouleurFormat(book.format);
     // pour donner des couleurs dynamiques aux livres en fonction de leur genre et format
-
-    const fontSize = tailleDynamique(size, innitiales);
-    //taille de police dynamique en fonction de la longueur du titre
 
     const bookGroup = d3.select("#svg1")
         .append("g")
@@ -432,11 +421,11 @@ function afficher_livre_plat(book, x, y, size, loc) {
         })
         .on("mouseout", function (event, d) {
             d3.select(this.parentNode).select(".book_select").transition()
-                .duration('400')
+                .duration("400")
                 .attr("stroke", "#00000000");
 
             div.transition()
-                .duration('50')
+                .duration("50")
                 .style("opacity", 0);
         })
 
