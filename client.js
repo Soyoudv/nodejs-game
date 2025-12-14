@@ -607,8 +607,9 @@ socket.on("GAME_START", (joueur1, joueur2) => {
     reset_game();
     display_till_else("game_status", "Game started between " + joueur1 + " and " + joueur2);
     // AFFICHAGE dans game_box
+
     d3.selectAll("svg").remove(); // on supprime l'ancienne zone de jeu s'il y en a une
-    const svg = d3.select(".game_box")
+    const svg = d3.select(".game_box") // on la recrée
         .append("svg")
         .attr("id", "svg1")
         .attr("width", 1080)
@@ -673,6 +674,7 @@ function reset_game() {
     game_going = false;
     my_turn = false;
     selected_book = null;
+    d3.selectAll(".tooltip").remove(); // on supprime les tooltips s'il y en a
     d3.selectAll("svg").remove(); // on supprime la zone de jeu
     display_till_else("game_status", "Game has ended.");
     console.log("Game has ended."); // log
