@@ -1,51 +1,53 @@
 # nodejs-game
-*par Soheil et Prosper*
+**par Soheil et Prosper**
 
-jeu des bibliothèques connexions de joueurs via socket.io<BR>
+*Jeu des bibliothèques connexions de joueurs via socket.io*<BR>
 <BR>
 Le jeu se joue en tour par tour. Chaque joueur dispose d'une bibliothèque qu'il doit remplir avec un livre qu'il choisit parmi 5 livres proposés à chaque tour. Chaque livre a un genre et un format. Le but du jeu est de maximiser le score de sa bibliothèque en fonction des livres choisis.<BR>
 
 ## Installation
 
-besoin de nodejs et npm:
+Dézipper le projet et se placer dans le dossier du projet, au même niveau que server.js<BR>
+
+Ensuite, vous aurez besoin de nodejs et npm:
 ```bash
 sudo apt install nodejs npm
 ```
-innitialiser le projet:
+Innitialisez le projet:
 ```bash
 npm init -y
 ```
 
-puis mettre en place les dépendances:
+Puis mettez en place les dépendances:
 ```bash
 npm install express socket.io
 ```
 
 ## Lancement et Utilisation
 
-lancer le serveur:
+Lancez le serveur:
 ```bash
 node server.js
 ```
 
 ### Pour se connecter sur le jeu:
 
-ouvrir un navigateur à l'adresse http://localhost:8888
+Ouvrez un navigateur à l'adresse http://localhost:8888
 
 ### Pour y accéder depuis une autre machine du réseau local:
 
-trouver l'adresse IP locale de la machine qui héberge le serveur:
+Trouvez l'adresse IP locale de la machine qui héberge le serveur:
 
-- sur **linux** :
+- Sur **linux** :
 ```bash
 hostname -I
 ```
-- sur **windows** :
+- Sur **windows** :
 ```bash
 ipconfig
 ```
 
-puis ouvrir un navigateur à l'adresse `http://(adresse_ip_locale):8888`<BR>
+Puis ouvrez ir un navigateur à l'adresse `http://(adresse_ip_locale):8888`<BR>
 
 ## Calcul des scores:
 
