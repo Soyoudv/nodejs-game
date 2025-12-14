@@ -119,3 +119,14 @@ body {
     padding: 10px;
     border-radius: 10px;
 }
+
+div.tooltip {
+     position: absolute; /*on le met où on veut*/
+     text-align: center;
+     padding: 6px;
+     background: #FFFFFFAA;
+     backdrop-filter: blur(5px);
+     color: black;
+     pointer-events: none;  /*empêche d'être cliquable*/
+     font-size: 16px;
+}

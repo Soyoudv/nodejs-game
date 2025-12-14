@@ -157,41 +157,6 @@ function tailleDynamique(size, title) { // fonction pour calculer la taille de p
     return Math.max(min, max - penalty);
 }
 
-function wrapText(textSelection, width) { // fonction compliquée pour coupe le texte en plusieurs lignes si trop long // pas utilisée
-    textSelection.each(function () {
-        const text = d3.select(this);
-        const words = text.text().split(/\s+/).reverse();
-        let word;
-        let line = [];
-        let lineNumber = 0;
-        const lineHeight = 1.1; //en em
-        const y = text.attr("y");
-        const dy = 0;
-
-        let tspan = text.text(null)
-            .append("tspan")
-            .attr("x", text.attr("x"))
-            .attr("y", y)
-            .attr("dy", dy + "em");
-
-        while (word = words.pop()) {
-            line.push(word);
-            tspan.text(line.join(" "));
-            if (tspan.node().getComputedTextLength() > width) {
-                line.pop();
-                tspan.text(line.join(" "));
-                line = [word];
-                if (++lineNumber > 1) break; // max 2 lignes
-                tspan = text.append("tspan")
-                    .attr("x", text.attr("x"))
-                    .attr("y", y)
-                    .attr("dy", lineNumber * lineHeight + dy + "em")
-                    .text(word);
-            }
-        }
-    });
-}
-
 function matchCouleurGenre(genre) { // fonction pour associer une couleur à un genre
     const couleurs = { // que des couleurs différentes pour bien voir
         "anglo-saxonne": "brown",
@@ -430,17 +395,6 @@ function afficher_livre_plat(book, x, y, size, loc) {
         .attr("font-size", "16px")
         .text(innitiales); // nom de l'auteur, s'il est vide, mettre l'auteur
 
-    /*
-    bookGroup.append("text")
-        .attr("id", "titre")
-        .attr("x", w / 2)
-        .attr("y", w * 0.3)
-        .attr("text-anchor", "middle")
-        .attr("fill", "black")
-        .attr("font-size", `${fontSize}px`)
-    .text(book.titre);
-    */
-
     bookGroup.append("rect")
         .attr("width", imgSize)
         .attr("height", imgSize)
@@ -448,6 +402,11 @@ function afficher_livre_plat(book, x, y, size, loc) {
         .attr("y", h - imgSize - 10)
         .attr("fill", couleurGenre)
         .attr("stroke", "black");
+
+    // panneau pour informer le joueur sur le livre on hoover
+    var div = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
 
     bookGroup.append("rect")
         .attr("width", w)
@@ -457,11 +416,23 @@ function afficher_livre_plat(book, x, y, size, loc) {
             d3.select(this.parentNode).select(".book_select").transition()
                 .duration('0')
                 .attr("stroke", "white");
+            div.transition()
+                .duration(50)
+                .style("opacity", 1);
+
+            let titre = `<b>${book.titre}</b><br/>by ${book.auteur}<br/>Genre: ${book.genre}<br/>Format: ${book.format}`;
+            div.html(titre)
+                .style("left", (event.pageX + 15) + "px")
+                .style("top", (event.pageY + 15) + "px");
         })
         .on("mouseout", function (event, d) {
             d3.select(this.parentNode).select(".book_select").transition()
                 .duration('400')
                 .attr("stroke", "#00000000");
+
+            div.transition()
+                .duration('50')
+                .style("opacity", 0);
         })
 
     d3.selectAll(".book")
@@ -483,8 +454,6 @@ function afficher_livre_plat(book, x, y, size, loc) {
                 console.log("Livre sélectionné :", d.livre.titre);
             }
         });
-
-    // wrapText(bookGroup.select("#titre"), w * 0.9); // on applique le wrapping au titre
 }
 
 function afficher_panneau_livres(n_livres, size_livre, x, y) {
