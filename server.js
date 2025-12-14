@@ -23,6 +23,7 @@ app.get('/', (req, res) => { // Envoie au client le fichier client.html
 });
 
 const fs = require('fs');
+const { format } = require('path');
 
 const user_needed = 2; // nombre d'utilisateurs nécessaires pour démarrer la partie
 const user_max = 2; // nombre maximum d'utilisateurs
@@ -166,16 +167,123 @@ function GAME_END() {
 
 
 
-function calcul_score(biblio) { // PROVISOIRE (COMPTE JUSTE LE NOMBRE DE LIVRES)
-  let score = 0;
-  console.log(biblio)
-  for (let row of biblio) {
-    for (let book of row) {
-      if (book !== null) {
-        score += 1;
+function calcul_ordre_alphabetique_ligne(biblio, l) { // biblio[colonne][ligne] et l la ligne à traiter
+  var ligne = [];
+  for (var i = 0; i < biblio.length; i++) {
+    if (biblio[i][l] != null) {
+      ligne.push(biblio[i][l].nom); // on ne garde que le nom
+    }
+  }
+
+  // Si moins de 2 livres, pas de vérification possible
+  if (ligne.length < 2) {
+    return 0;
+  }
+
+  // Vérifier l'ordre alphabétique
+  for (var i = 1; i < ligne.length; i++) {
+    if (ligne[i] < ligne[i - 1]) {
+      return 0; // pas en ordre alphabétique
+    }
+  }
+
+  // Tous les livres sont en ordre alphabétique
+  var n = ligne.length;
+  var full = 0;
+  for (var i = 0; i < biblio.length; i++) {
+    if (biblio[i][l] != null) {
+      full++;
+    }
+  }
+  
+  if (full == biblio.length) {
+    console.log("Ligne " + l + " en ordre alphabétique complet avec score: " + (n * 3)); // log
+    return n * 3; // ordre alphabétique ET complete
+  } else {
+    console.log("Ligne " + l + " en ordre alphabétique incomplet avec score: " + (n * 2)); // log
+    return n * 2; // ordre alphabétique mais pas complete
+  }
+}
+
+function detecte_serie_type(array, category) {
+  var total_score = 0;
+  var score_buffer = 0;
+  var type_courant = null;
+  var number_of_type = 0;
+  
+  if (array.length === 0) return 0;
+
+  // Chercher le premier élément non-null pour commencer
+  var start = 0;
+  while (start < array.length && array[start] == null) {
+    start++;
+  }
+  
+  if (start === array.length) return 0; // Tous les éléments sont null
+  
+  type_courant = array[start][category];
+  number_of_type = 1;
+  
+  for (var i = start + 1; i < array.length; i++) {
+    // Si on rencontre un null ou un changement de type, on ferme la série
+    if (array[i] == null || array[i][category] != type_courant) {
+      total_score += score_buffer;
+      console.log("Series ended at index " + i + " with score buffer: " + score_buffer); // log
+      // On réinitialise pour la prochaine série
+      if (array[i] != null) {
+        type_courant = array[i][category];
+        number_of_type = 1;
+      } else {
+        number_of_type = 0;
+      }
+      score_buffer = 0;
+    }
+    // Sinon on continue la série
+    else {
+      number_of_type += 1;
+      if (number_of_type >= 3) {  // au moins 4 livres de même type
+        score_buffer = Math.pow(2, number_of_type + 1);
       }
     }
   }
+  total_score += score_buffer;  // ajouter la dernière série
+  console.log("Detected series in category " + category + " with score: " + total_score); // log
+  return total_score;
+}
+
+function detecte_toutes_series(biblio) {
+  var score = 0;
+  
+  // Parcours des colonnes
+  for (var i = 0; i < biblio.length; i++) {
+    score += detecte_serie_type(biblio[i], "genre");
+    score += detecte_serie_type(biblio[i], "format");
+  }
+  
+  // Parcours des lignes
+  for (var i = 0; i < biblio[0].length; i++) {
+    var ligne = [];
+    for (var j = 0; j < biblio.length; j++) {
+      if (biblio[j][i] != null) {
+        ligne.push(biblio[j][i]);
+      } else {
+        ligne.push(null);
+      }
+    }
+    score += detecte_serie_type(ligne, "genre");
+    score += detecte_serie_type(ligne, "format");
+  }
+  return score;
+}
+
+function calcul_score(biblio) { // biblio[colonne][ligne]
+  var score = 0;
+
+  for (var i = 0; i < biblio[0].length; i++) { // parcours des lignes
+    score += calcul_ordre_alphabetique_ligne(biblio, i);
+  }
+  score += detecte_toutes_series(biblio);
+
   return score;
 }
 

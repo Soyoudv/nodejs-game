@@ -46,3 +46,9 @@ ipconfig
 ```
 
 puis ouvrir un navigateur à l'adresse `http://(adresse_ip_locale):8888`<BR>
+
+## Calcul des scores:
+
+- Si la ligne est complete et triée par ordre alphabetique (auteur): 3pts par livre
+- Si la ligne est icomplète mais dans l'ordre alphabétique (auteur): 2pts par livre
+- Pour un combo de 3+ livres de même format/genre: 2^n avec n nombre de livres dans le combo (sur les colonnes et les lignes)
