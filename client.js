@@ -1,0 +1,735 @@
+// DECLARATION DES VARIABLES GLOBALES
+
+var socket = io();
+
+var registered_name = "";
+var joined = false;
+var my_id = "";
+
+var game_going = false;
+var my_turn = false;
+
+var selected_book = null;
+var n_books = 5;
+
+var other_player = null;
+
+onload = function () {
+    document.getElementById("name_box").value = "";
+    document.getElementById("message_box").value = "";
+    // on vide les boites à l'entrée d'une personne dans le site
+    socket.emit('request_id');
+}
+
+// PARTIE fonctions display
+
+function display_till_else(where, message) {
+    document.getElementById(where).innerText = message;
+}
+
+function display_for(where, message, n) {
+    display_till_else(where, message);
+
+    if (where != join_status || where != chat_status) {
+        setTimeout(function () { // Efface le message après n secondes
+            document.getElementById(where).innerText = "";
+        }, 1000 * n);
+    } else {
+        setTimeout(function () { // Efface le message après n secondes
+            document.getElementById(where).innerHTML = "<BR>";
+        }, 1000 * n);
+    }
+}
+
+// PARTIE identification et chat
+
+socket.on('receive_id', (id) => {
+    my_id = id;
+    console.log("Id given to newly connected user: " + my_id); // log
+});
+
+
+function join() {
+    var name = document.getElementById("name_box").value;
+    document.getElementById("name_box").value = "";
+
+    if (name == "") {
+        display_for("join_status", "Your name can't be empty", 3);
+        return;
+    }
+
+    console.log("Sending join request as " + name);
+    socket.emit("identification", name);
+}
+
+
+socket.on("join_response", (name, success, message) => {
+    if (success) {
+        joined = true;
+        registered_name = name;
+        display_for("join_status", message + ": " + registered_name, 3);
+
+        document.getElementById("profile_status").innerHTML = "(Logged in as " + registered_name + ")";
+        console.log("Join successful as " + registered_name); // log
+    } else {
+        display_for("join_status", "Join failed: " + message, 3);
+    }
+});
+
+
+socket.on('exit_response', (name, success, message) => {
+    if (success) {
+        display_for("join_status", "User " + name + " has exited", 3);
+        console.log("Exit successful for " + name); // log
+    } else {
+        display_for("join_status", "Exit failed: " + message, 3);
+        console.log("Exit failed for " + name); // log
+    }
+});
+
+
+socket.on('update_user_list', (user_list, userid_list, user_needed, user_max) => {
+
+    document.getElementById("names").innerHTML = ""; // vide la boîte
+
+    // on affiche tous les éléments de la hashmap en la parcourant en tant que un tableau
+    for (let i = 0; i < user_list.length; i++) {
+        document.getElementById("names").innerHTML += "<li><b>" + user_list[i] + "</b><b class='id_player'>#" + (i + 1) + "</b></li>";
+    }
+
+    if (user_list.length >= 1) {
+        document.getElementById("game_status").innerHTML = user_list.length + " user connected. (" + user_needed + " needed to start, max " + user_max + ")";
+        return;
+    } else {
+        document.getElementById("game_status").innerHTML = "no users connected. (" + user_needed + " needed to start, max " + user_max + ")";
+        return;
+    }
+});
+
+
+function exit() {
+    if (joined) {
+        document.getElementById("profile_status").innerText = "";
+        console.log(my_id + "Sending exit request as " + registered_name); // log
+        socket.emit("exit");
+
+        joined = false;
+        registered_name = "";
+    } else {
+        display_for("join_status", "You are not connected, you cant exit", 3);
+    }
+}
+
+function send_message() {
+    var message = document.getElementById("message_box").value;
+    document.getElementById("message_box").value = "";
+
+    if (!joined) {
+
+        display_for("chat_status", "You must be connected to send messages", 3);
+
+    }
+
+    else if (message == "") {
+
+        display_for("chat_status", "You can't send empty messages", 3);
+
+    } else {
+
+        console.log("Sending message: " + message); // log
+        socket.emit("send_message", my_id, message);
+    }
+}
+
+socket.on('receive_message', (id, name, message) => {
+    console.log("Received message from " + name + ": " + message); // log
+    document.getElementById("messages").innerHTML += "<li><b>" + name + "</b><b class='id_player'>#" + id + "</b>: " + message + "</li>";
+})
+
+
+// PARTIE fonctions pour le jeu
+
+function tailleDynamique(size, title) { // fonction pour calculer la taille de police en fonction de la longueur du titre
+    const max = size * 0.13;                 // taille maxi relative
+    const min = size * 0.06;                 // taille mini relative
+    const penalty = title.length * (size * 0.002);
+
+    return Math.max(min, max - penalty);
+}
+
+function wrapText(textSelection, width) { // fonction compliquée pour coupe le texte en plusieurs lignes si trop long // pas utilisée
+    textSelection.each(function () {
+        const text = d3.select(this);
+        const words = text.text().split(/\s+/).reverse();
+        let word;
+        let line = [];
+        let lineNumber = 0;
+        const lineHeight = 1.1; //en em
+        const y = text.attr("y");
+        const dy = 0;
+
+        let tspan = text.text(null)
+            .append("tspan")
+            .attr("x", text.attr("x"))
+            .attr("y", y)
+            .attr("dy", dy + "em");
+
+        while (word = words.pop()) {
+            line.push(word);
+            tspan.text(line.join(" "));
+            if (tspan.node().getComputedTextLength() > width) {
+                line.pop();
+                tspan.text(line.join(" "));
+                line = [word];
+                if (++lineNumber > 1) break; // max 2 lignes
+                tspan = text.append("tspan")
+                    .attr("x", text.attr("x"))
+                    .attr("y", y)
+                    .attr("dy", lineNumber * lineHeight + dy + "em")
+                    .text(word);
+            }
+        }
+    });
+}
+
+function matchCouleurGenre(genre) { // fonction pour associer une couleur à un genre
+    const couleurs = { // que des couleurs différentes pour bien voir
+        "anglo-saxonne": "brown",
+        "aventures": "green",
+        "essai": "purple",
+        "fantasy": "dark_green",
+        "feelgood": "orange",
+        "humour": "yellow",
+        "poésie": "lime",
+        "policier": "blue",
+        "roman": "pink",
+        "russe": "cyan",
+        "sf": "dark_blue",
+        "théâtre": "red",
+        "thriller": "dark_red"
+    };
+    return couleurs[genre] || "gray"; // Couleur par défaut si le genre n'est pas reconnu
+}
+
+function matchCouleurFormat(format) { // fonction pour associer une couleur à un format
+    const couleurs = {
+        "grand": "#ffffff",
+        "maxi": "#FFF9ED",
+        "medium": "#FFF3F2",
+        "poche": "#FFE9D6"
+    };
+    return couleurs[format] || "gray"; // Couleur par défaut si le format n'est pas reconnu
+}
+
+function get_nomprenom_list(nom, prenomnom) {
+    let nom_list = nom.split(' ');
+    let prenomnom_list = prenomnom.split(' ');
+    let prenom = [];
+    for (var i = 0; i < prenomnom_list.length - nom_list.length; i++) {
+        prenom.push(prenomnom_list[i]);
+    }
+    var nomprenom_list = [];
+    nomprenom_list = nomprenom_list.concat(nom_list, prenom);
+    return nomprenom_list;
+}
+
+function get_innitiales(nom, prenom) {
+    var nomreprenom_list = get_nomprenom_list(nom, prenom);
+    let innitiales = [];
+    for (var i = 0; i < nomreprenom_list.length; i++) {
+        if (nomreprenom_list[i] != 'de' && nomreprenom_list[i] != 'le') {
+            innitiales.push(nomreprenom_list[i][0]);
+        }
+    }
+    return innitiales;
+}
+
+// PARTIE affichage du jeu
+
+function afficher_biblio(joueur, x, y, c, l, size) {
+    const w = size * (0.75)
+    const h = size
+    const wtotal = c * size * (0.75) + (c + 1) * 10
+    const htotal = l * size + (l + 1) * 10
+
+    const biblioGroup = d3.select("#svg1")
+        .append("g")
+        .attr("class", "biblio")
+        .attr("transform", `translate(${x}, ${y})`)
+        .datum({ // on stocke les infos de la bibliothèque et un tableau vide pour le contenu
+            joueur: joueur,
+            coord_x: x,
+            coord_y: y,
+            colonnes: c,
+            lignes: l,
+            contenu: Array.from({ length: c }, () => Array.from({ length: l }, () => null))
+        });
+
+    biblioGroup.append("rect")
+        .attr("width", wtotal)
+        .attr("height", htotal)
+        .attr("fill", "lightgray")
+        .attr("stroke", registered_name == joueur ? "green" : "red")
+        .attr("stroke-width", 3)
+        .style("filter", "drop-shadow(0 0 10px rgba(0, 0, 0, 0.5))");
+
+    for (var i = 0; i < l; i++) {
+        biblioGroup.append("rect")
+            .attr("x", 10)
+            .attr("y", 10 + i * (h + 10))
+            .attr("fill", "darkgray")
+            .attr("width", w * c + 10 * (c - 1))
+            .attr("height", h);
+    }
+
+    biblioGroup.append("text")
+        .attr("id", "nom")
+        .attr("x", wtotal / 2)
+        .attr("y", -10)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "40px")
+        .attr("fill", "white")
+        .attr("filter", "drop-shadow(0 0 5px rgba(0, 0, 0, 1))")
+        .text((joueur).toUpperCase()); // en majuscule
+
+
+    biblioGroup.append("text")
+        .attr("id", "score")
+        .attr("x", wtotal / 2)
+        .attr("y", htotal + 30)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "30px")
+        .attr("fill", "white")
+        .attr("filter", "drop-shadow(0 0 5px rgba(0, 0, 0, 1))")
+        .text(`Score: 0`); // en majuscule
+
+    for (var i = 0; i < c; i++) {
+        for (var j = 0; j < l; j++) {
+            biblioGroup.append("rect")
+                .attr("class", "biblio_slot")
+                .attr("x", 10 + i * (w + 10))
+                .attr("y", 10 + j * (h + 10))
+                .attr("width", w)
+                .attr("height", h)
+                .attr("fill", "darkgray")
+                .datum({
+                    full: false,
+                    slot_x: i,
+                    slot_y: j,
+                    coord_x: 10 + i * (w + 10),
+                    coord_y: 10 + j * (h + 10)
+                })
+                .on("mouseover", function (event, d) {
+                    if (registered_name == biblioGroup.datum().joueur) {
+                        if (d.full === false) {
+                            d3.select(this).attr("fill", "darkgreen");
+                        } else {
+                            d3.select(this).attr("fill", "darkred");
+                        }
+                    }
+                })
+                .on("mouseout", function (event, d) {
+                    d3.select(this).attr("fill", "darkgray");
+                })
+                .on("click", function (event, d) {
+                    if (my_turn && registered_name == biblioGroup.datum().joueur) {
+                        if (selected_book !== null) {
+                            let biblioData = biblioGroup.datum();
+
+                            if (biblioData.contenu[d.slot_x][d.slot_y] === null) {
+                                let bookData = selected_book.datum().livre;
+
+                                // mettre à jour le contenu de la bibliothèque
+                                biblioData.contenu[d.slot_x][d.slot_y] = bookData;
+
+                                // déplacer le livre dans la bibliothèque (mettre à jour les coordonnées) toujours le même livre et pas un sous élément de la bibliothèque
+                                selected_book.attr("transform", `translate(${d.coord_x + biblioData.coord_x}, ${d.coord_y + biblioData.coord_y})`);
+
+                                // mettre à jour le datum pour indiquer que le livre est maintenant dans la biblio
+                                let bookDatum = selected_book.datum();
+                                bookDatum.localisation = "biblio";
+                                bookDatum.joueur = biblioData.joueur;
+                                bookDatum.slot_x = d.slot_x;
+                                bookDatum.slot_y = d.slot_y;
+                                selected_book.datum(bookDatum);
+
+                                selected_book.select("rect") // deselectionner livre
+                                    .attr("stroke-width", 1)
+                                    .attr("stroke", "black");
+                                selected_book = null;
+
+                                d.full = true;
+                                my_turn = false; // fin du tour après avoir placé le livre
+
+                                // retirer le livre du panneau (pas graphiquement car déplacé, mais dans les données)
+                                supprimer_livre_panneau(bookData);
+
+                                socket.emit("end_turn", registered_name, bookData, d.slot_x, d.slot_y); // prévenir le serveur de la fin du tour
+
+                                console.log(`Livre ajouté à la bibliothèque de ${biblioData.joueur} en position (${d.slot_x}, ${d.slot_y})`);
+
+                            } else {
+                                console.log("Emplacement déjà occupé !");
+                            }
+                        }
+                    }
+                });
+        }
+    }
+}
+
+function afficher_livre_plat(book, x, y, size, loc) {
+    const w = size * (0.75);
+    const h = size;
+    const imgSize = size * 0.5;
+
+    const innitiales = get_innitiales(book.nom || book.auteur.split(' ').pop(), book.auteur);
+    // on récupère les innitiales de l'auteur à partir du nom complet et du nom, s'il n'y a pas de prénom, on récupère juste le premier mot en tant que prénom
+
+    const couleurGenre = matchCouleurGenre(book.genre);
+    const couleurFormat = matchCouleurFormat(book.format);
+    // pour donner des couleurs dynamiques aux livres en fonction de leur genre et format
+
+    const fontSize = tailleDynamique(size, innitiales);
+    //taille de police dynamique en fonction de la longueur du titre
+
+    const bookGroup = d3.select("#svg1")
+        .append("g")
+        .attr("class", "book")
+        .attr("transform", `translate(${x}, ${y})`)
+        .datum({
+            livre: book,
+            coord_x: x,
+            coord_y: y,
+            localisation: loc
+        });
+
+    bookGroup.append("rect")
+        .attr("width", w)
+        .attr("height", h)
+        .attr("fill", couleurFormat)
+        .attr("stroke", "black");
+
+    bookGroup.append("text")
+        .attr("id", "nom")
+        .attr("x", w / 2)
+        .attr("y", w * 0.35)
+        .attr("text-anchor", "middle")
+        .attr("fill", "black")
+        .attr("font-weight", "bold")
+        .attr("font-size", "16px")
+        .text(innitiales); // nom de l'auteur, s'il est vide, mettre l'auteur
+
+    /*
+    bookGroup.append("text")
+        .attr("id", "titre")
+        .attr("x", w / 2)
+        .attr("y", w * 0.3)
+        .attr("text-anchor", "middle")
+        .attr("fill", "black")
+        .attr("font-size", `${fontSize}px`)
+    .text(book.titre);
+    */
+
+    bookGroup.append("rect")
+        .attr("width", imgSize)
+        .attr("height", imgSize)
+        .attr("x", (w - imgSize) / 2)
+        .attr("y", h - imgSize - 10)
+        .attr("fill", couleurGenre)
+        .attr("stroke", "black");
+
+    bookGroup.append("rect")
+        .attr("width", w)
+        .attr("height", h)
+        .attr("fill", "#00000000")
+
+    d3.selectAll(".book")
+        .on("click", function (event, d) {
+            if (my_turn && d.localisation === "panneau") {
+                if (d.localisation == "panneau") {
+                    console.log("Livre pris du panneau de livres");
+                }
+                if (selected_book) {
+                    selected_book.select("rect")
+                        .attr("stroke-width", 1)
+                        .attr("stroke", "black");
+                }
+                selected_book = d3.select(this);
+                selected_book.select("rect")
+                    .attr("stroke-width", 2)
+                    .attr("stroke", "black");
+
+                console.log("Livre sélectionné :", d.livre.titre);
+            }
+        });
+
+    // wrapText(bookGroup.select("#titre"), w * 0.9); // on applique le wrapping au titre
+}
+
+function afficher_panneau_livres(n_livres, size_livre, x, y) {
+    let wlivre = size_livre * (0.75);
+    let hlivre = size_livre;
+    let wtotal = n_livres * wlivre + (n_livres + 1) * 10;
+    let htotal = hlivre + 10 * 2;
+    const panneauGroup = d3.select("#svg1")
+        .append("g")
+        .attr("class", "panneau_livres")
+        .attr("transform", `translate(${x}, ${y})`)
+        .datum({
+            full: false,
+            slots: n_livres,
+            contenu: Array.from({ length: n_livres }, () => null),
+            coord_x: x,
+            coord_y: y,
+            size_livre: size_livre
+        });
+
+    panneauGroup.append("rect")
+        .attr("width", wtotal)
+        .attr("height", htotal)
+        .attr("fill", "lightgray")
+        .attr("stroke", "black")
+        .style("filter", "drop-shadow(0 0 10px rgba(0, 0, 0, 0.5))");
+
+    for (let i = 0; i < n_livres; i++) {
+        panneauGroup.append("rect")
+            .attr("x", 10 + i * (wlivre + 10))
+            .attr("y", 10)
+            .attr("width", wlivre)
+            .attr("height", hlivre)
+            .attr("fill", "darkgray")
+            .datum({
+                coord_x: 10 + i * (wlivre + 10),
+                coord_y: 10,
+                slotid: i
+            });
+    }
+}
+
+function afficher_scoreboard() {
+    const svg = d3.select(".game_box")
+        .append("svg")
+        .attr("id", "svg1")
+        .attr("width", 1080)
+        .attr("height", 720);
+
+    d3.select("#svg1")
+        .append("text")
+        .attr("x", 1080 / 2)
+        .attr("y", 720 / 2)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "60px")
+        .attr("font-weight", "bold")
+        .attr("fill", "black")
+        .text(`THIS IS THE SCOREBOARD`);
+}
+
+// PARTIE fonctions (le reste du code jeu)
+
+function est_vide_panneau_indice() { // donne l'indice de la case vide du panneau de livres, ou -1 si pleine
+    let panneauData = d3.selectAll(".panneau_livres").datum();
+    for (var i = 0; i < panneauData.slots; i++) {
+        if (panneauData.contenu[i] === null) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+function est_plein_panneau() {
+    return est_vide_panneau_indice() === -1;
+}
+
+function afficher_livre(book, x, y, loc) {
+    // affiche un livre à des coordonnées données
+    afficher_livre_plat(book, x, y, 80, loc);
+}
+
+function supprimer_livre(book) { // suprime l'affichage du livre donné
+    d3.selectAll(".book").filter(function (d) {
+        return d.livre === book;
+    }).remove();
+}
+
+function supprimer_livre_panneau(livre) { // suprimme un livre entièrement du panneau de livres
+    const panneau = d3.selectAll(".panneau_livres");
+    const panneauData = panneau.datum();
+
+    for (var i = 0; i < panneauData.slots; i++) {
+        if (panneauData.contenu[i] !== null && panneauData.contenu[i].titre === livre.titre) {
+            panneauData.contenu[i] = null;
+            break;
+        }
+    }
+    panneau.datum(panneauData); // mettre à jour les données du panneau
+}
+
+function pousser_panneau_livres() {
+    // compacte tous les livres vers la droite en mettant à jour uniquement les données
+    const panneau = d3.selectAll(".panneau_livres");
+    const panneauData = panneau.datum();
+    if (!panneauData || !Array.isArray(panneauData.contenu)) return;
+
+    let write = panneauData.slots - 1;
+    for (let read = panneauData.slots - 1; read >= 0; read--) {
+        if (panneauData.contenu[read] !== null) {
+            if (read !== write) {
+                panneauData.contenu[write] = panneauData.contenu[read]; // déplacer le livre dans les données
+
+                supprimer_livre(panneauData.contenu[read]); // supprimer l'affichage du livre à l'ancienne position
+
+                panneauData.contenu[read] = null; // vider l'ancienne position
+
+                const x = panneauData.coord_x + 10 + write * (panneauData.size_livre * 0.75 + 10);
+                const y = panneauData.coord_y + 10;
+                afficher_livre(panneauData.contenu[write], x, y, "panneau"); // afficher le livre à la nouvelle position
+            }
+            write--;
+        }
+    }
+    panneau.datum(panneauData); // mettre à jour les données du panneau
+}
+
+function ajouter_livre_panneau(book, size_livre) {
+    const panneau = d3.selectAll(".panneau_livres");
+    const panneauData = panneau.datum();
+
+    // find pos:
+    const pos = est_vide_panneau_indice();
+    if (pos === -1) {
+        console.log("Panneau de livres plein, impossible d'ajouter le livre");
+        return;
+    }
+
+    panneauData.contenu[pos] = book; // déplacer le livre dans les données
+
+    const x = panneauData.coord_x + 10 + pos * (panneauData.size_livre * 0.75 + 10);
+    const y = panneauData.coord_y + 10;
+    afficher_livre(panneauData.contenu[pos], x, y, "panneau"); // afficher le livre à la nouvelle position
+
+
+    panneau.datum(panneauData); // mettre à jour les données du panneau
+}
+
+socket.on("GAME_START", (joueur1, joueur2) => {
+    reset_game();
+    display_till_else("game_status", "Game started between " + joueur1 + " and " + joueur2);
+    // AFFICHAGE dans game_box
+    d3.selectAll("svg").remove(); // on supprime l'ancienne zone de jeu s'il y en a une
+    const svg = d3.select(".game_box")
+        .append("svg")
+        .attr("id", "svg1")
+        .attr("width", 1080)
+        .attr("height", 720);
+    console.log("Game started between " + joueur1 + " and " + joueur2); // log
+    game_going = true;
+
+    afficher_biblio(joueur1, 50, 75, 5, 4, 80); // joueur 1
+    afficher_biblio(joueur2, 670, 75, 5, 4, 80); // joueur 2
+
+    afficher_panneau_livres(5, 80, (1080 - (80 * 0.75 * 5 + 10 * 6)) / 2, 720 - 20 - 80 - 50); // panneau de livres
+
+    other_player = joueur1 == registered_name ? joueur2 : joueur1;
+});
+
+socket.on("NEXT_TURN", (joueur) => {
+    if (joueur == registered_name) {
+        my_turn = true;
+        display_till_else("game_status", "It's your turn!");
+        console.log("It's your turn!"); // log
+    } else {
+        my_turn = false;
+        display_till_else("game_status", "It's " + joueur + "'s turn");
+        console.log("It's " + joueur + "'s turn"); // log
+    }
+});
+
+socket.on("book", (book, index) => {
+    // deplacer le livre dans le panneau de livres
+    console.log("Book n°" + index + " received: " + book.titre); // log
+    pousser_panneau_livres();
+    ajouter_livre_panneau(book, 80);
+});
+
+socket.on("book_taken", (user_name, livre, pos_x, pos_y) => {
+    if (user_name != registered_name) {
+
+        var truecords_x = 0;
+        var truecords_y = 0;
+
+        const biblios = d3.selectAll(".biblio").nodes();
+
+        for (var i = 0; i < biblios.length; i++) {
+            const biblioData = d3.select(biblios[i]).datum();
+            if (biblioData.joueur == user_name) {
+                truecords_x = biblioData.coord_x + pos_x * (80 * 0.75 + 10) + 10;
+                truecords_y = biblioData.coord_y + pos_y * (80 + 10) + 10;
+                break;
+            }
+        }
+
+        afficher_livre(livre, truecords_x, truecords_y, "biblio");
+
+        supprimer_livre_panneau(livre);
+        pousser_panneau_livres();
+
+        console.log(user_name + " has placed the book: " + livre.titre + " in position (" + pos_x + ", " + pos_y + ")"); // log
+    }
+});
+
+function reset_game() {
+    game_going = false;
+    my_turn = false;
+    selected_book = null;
+    d3.selectAll("svg").remove(); // on supprime la zone de jeu
+    display_till_else("game_status", "Game has ended.");
+    console.log("Game has ended."); // log
+}
+
+socket.on("GAME_END", () => {
+    reset_game();
+    console.log("Received GAME_END from server"); // log
+    afficher_scoreboard();
+});
+
+socket.on("GAME_STOP", (reason) => {
+    reset_game();
+    console.log("Received GAME_STOP from server: " + reason); // log
+});
+
+function recupere_biblio() {
+    // Retourne le tableau contenu de la biblio du joueur courant
+    const selection = d3.selectAll(".biblio").filter(function (d) {
+        return d && d.joueur === registered_name;
+    });
+
+    if (selection.size() === 0) {
+        console.log("Aucune bibliothèque trouvée pour " + registered_name);
+        return null;
+    }
+
+    console.log("Récupération de la bibliothèque de " + registered_name);
+    return selection.datum().contenu;
+}
+
+socket.on("REQUEST_BIBLIO", () => {
+    let biblio = recupere_biblio();
+    console.log("biblio demandé, envoi des scores au serveur: " + biblio); // log
+    socket.emit("SEND_BIBLIO", registered_name, biblio);
+});
+
+socket.on("SCORE_UPDATE", (dico, [joueur1, joueur2]) => {
+    my_score = dico[registered_name] || 0;
+    other_score = dico[other_player] || 0;
+
+    d3.selectAll(".biblio").filter(function (d) {
+        if (d.joueur === registered_name) {
+            d3.select(this).select("#score")
+                .text(`Score: ${my_score}`);
+        } else if (d.joueur === other_player) {
+            d3.select(this).select("#score")
+                .text(`Score: ${other_score}`);
+        }
+    });
+});
