@@ -162,16 +162,16 @@ function matchCouleurGenre(genre) { // fonction pour associer une couleur à un 
         "anglo-saxonne": "brown",
         "aventures": "green",
         "essai": "purple",
-        "fantasy": "dark_green",
+        "fantasy": "teal",
         "feelgood": "orange",
         "humour": "yellow",
         "poésie": "lime",
         "policier": "blue",
         "roman": "pink",
         "russe": "cyan",
-        "sf": "dark_blue",
+        "sf": "darkblue",
         "théâtre": "red",
-        "thriller": "dark_red"
+        "thriller": "darkred"
     };
     return couleurs[genre] || "gray"; // Couleur par défaut si le genre n'est pas reconnu
 }

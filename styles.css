@@ -11,7 +11,8 @@ body {
 
 #user_div {
     position: absolute;
-    background-color: #EEE;
+    background: #EEEEEEAA;
+    backdrop-filter: blur(5px);
     padding: 10px;
     border-radius: 10px;
     box-shadow: 0 0 5px #00000050;
@@ -20,7 +21,8 @@ body {
 #chat_div {
     position: absolute;
     bottom: 10px;
-    background-color: #EEE;
+    background: #EEEEEEAA;
+    backdrop-filter: blur(5px);
     padding: 10px;
     border-radius: 10px;
     box-shadow: 0 0 5px #00000050;
@@ -118,15 +120,20 @@ body {
     background-color: #FFF;
     padding: 10px;
     border-radius: 10px;
+    background: #FFFFFF22;
+    backdrop-filter: blur(1px);
+    box-shadow: 0 0 5px #00000050;
 }
 
 div.tooltip {
-     position: absolute; /*on le met où on veut*/
-     text-align: center;
-     padding: 6px;
-     background: #FFFFFFAA;
-     backdrop-filter: blur(5px);
-     color: black;
-     pointer-events: none;  /*empêche d'être cliquable*/
-     font-size: 16px;
+    position: absolute;
+    /*on le met où on veut*/
+    text-align: center;
+    padding: 6px;
+    background: #FFFFFFAA;
+    backdrop-filter: blur(5px);
+    color: black;
+    pointer-events: none;
+    /*empêche d'être cliquable*/
+    font-size: 16px;
 }
